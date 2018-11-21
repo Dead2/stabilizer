@@ -419,11 +419,8 @@ struct StabilizerPass : public ModulePass {
 
         // Ensure the dummy is placed immediately after our function
         auto old_next_f_node = std::next(f_iter);
-        cout<<"[] Considering "<<fp->getName().str()<<std::endl;
-        cout<<"adding dummy after "<<fp->getName().str()<<std::endl;
         auto new_next_f_node = m.getFunctionList().insertAfter(f_iter, next);
         if( old_next_f_node  != m.getFunctionList().end() ) {
-            cout<<"  not empty after the function. putting dummy before "<< old_next_f_node->getName().str()<<std::endl;
             auto old_next_node = m.getFunctionList().remove(old_next_f_node);
             m.getFunctionList().insertAfter(new_next_f_node, old_next_node);
             //m.getFunctionList().splice(new_next_f_node, m.getFunctionList(), old_next_f_node, std::next(old_next_f_node));
