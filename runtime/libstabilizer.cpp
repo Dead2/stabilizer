@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <execinfo.h>
+#include <sys/time.h>
+
 
 #include "Function.h"
 #include "FunctionLocation.h"

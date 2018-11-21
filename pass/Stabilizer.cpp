@@ -1,19 +1,22 @@
 #define DEBUG_TYPE "stabilizer"
 
 #include <llvm/Pass.h>
-#include <llvm/Module.h>
-#include <llvm/Constants.h>
-#include <llvm/Intrinsics.h>
-#include <llvm/Instructions.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/TypeBuilder.h>
+#include <llvm/IR/DataLayout.h>
 
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/CommandLine.h>
-#include <llvm/Support/TypeBuilder.h>
 
+#include <iostream>
 #include <map>
 #include <set>
 #include <vector>
-#include <llvm/Intrinsics.gen>
+#include <iterator>
+
 
 using namespace llvm;
 using namespace llvm::types;
@@ -81,7 +84,7 @@ struct StabilizerPass : public ModulePass {
      * \returns The width of a pointer in bits
      */
     Type* getIntptrType(Module& m) {
-        if(m.getPointerSize() == Module::Pointer32) {
+        if( getIntptrSize(m) == 32 ) {
             return Type::getInt32Ty(m.getContext());
         } else {
             return Type::getInt64Ty(m.getContext());
@@ -89,7 +92,7 @@ struct StabilizerPass : public ModulePass {
     }
     
     size_t getIntptrSize(Module& m) {
-        if(m.getPointerSize() == Module::Pointer32) {
+        if( m.getDataLayout().getPointerSizeInBits() == 32 ){
             return 32;
         } else {
             return 64;
@@ -184,12 +187,11 @@ struct StabilizerPass : public ModulePass {
         // Enable code randomization
         if(stabilize_code) {
             // Transform each function and register it with the stabilizer runtime
-            for(set<Function*>::iterator f_iter = local_functions.begin();
-                f_iter != local_functions.end(); f_iter++) {
-                
-                Function* f = *f_iter;
-                vector<Value*> args = randomizeCode(m, *f);
-                
+            for(Module::iterator f_iter = m.begin(); f_iter != m.end(); f_iter++) {    
+                Function* f = &(*f_iter);
+                vector<Value*> args = randomizeCode(m, f_iter);
+                //we skip the added dummy
+                f_iter++; 
                 Value* table = stackPads[f];
                 if(table == NULL) {
                     table = Constant::getNullValue(PointerType::get(stackPadType, 0));
@@ -277,7 +279,7 @@ struct StabilizerPass : public ModulePass {
         PointerType* ctor_fn_p_t = PointerType::get(ctor_fn_t, 0);
 
         // Constructor table entry type
-        StructType* ctor_entry_t = StructType::get(i32_t, ctor_fn_p_t, NULL);
+        StructType* ctor_entry_t = StructType::get(i32_t, ctor_fn_p_t);
 
         // Create constructor function
         Function* init = Function::Create(ctor_fn_t, Function::InternalLinkage, name, &m);
@@ -289,8 +291,7 @@ struct StabilizerPass : public ModulePass {
         ctor_entries.push_back(
             ConstantStruct::get(ctor_entry_t,
                 ConstantInt::get(i32_t, 65535, false),
-                init,
-                NULL
+                init
             )
         );
         
@@ -400,12 +401,13 @@ struct StabilizerPass : public ModulePass {
      * \arg f The function being transformed
      * \returns The arguments to be passed to stabilizer_register_function
      */
-    vector<Value*> randomizeCode(Module& m, Function& f) {
+    vector<Value*> randomizeCode(Module& m, Module::iterator f_iter) {
+        Function * fp = &(*f_iter);
         // Add a dummy function used to compute the size
         Function* next = Function::Create(
             FunctionType::get(Type::getVoidTy(m.getContext()), false),
             GlobalValue::InternalLinkage,
-            "stabilizer.dummy."+f.getName()
+            "stabilizer.dummy."+fp->getName()
         );
         
         // Align the following function to a cache line to avoid mixing code/data in cache
@@ -416,32 +418,33 @@ struct StabilizerPass : public ModulePass {
         ReturnInst::Create(m.getContext(), dummy_block);
 
         // Ensure the dummy is placed immediately after our function
-        if(f.getNextNode() == NULL) {
-            m.getFunctionList().setNext(&f, next);
-            m.getFunctionList().addNodeToList(next);
-        } else {
-            m.getFunctionList().setNext(next, f.getNextNode());
-            m.getFunctionList().setNext(&f, next);
-            m.getFunctionList().addNodeToList(next);
+        auto old_next_f_node = std::next(f_iter);
+        cout<<"[] Considering "<<fp->getName().str()<<std::endl;
+        cout<<"adding dummy after "<<fp->getName().str()<<std::endl;
+        auto new_next_f_node = m.getFunctionList().insertAfter(f_iter, next);
+        if( old_next_f_node  != m.getFunctionList().end() ) {
+            cout<<"  not empty after the function. putting dummy before "<< old_next_f_node->getName().str()<<std::endl;
+            auto old_next_node = m.getFunctionList().remove(old_next_f_node);
+            m.getFunctionList().insertAfter(new_next_f_node, old_next_node);
+            //m.getFunctionList().splice(new_next_f_node, m.getFunctionList(), old_next_f_node, std::next(old_next_f_node));
         }
-        
         // Remove stack protection (creates implicit global references)
-        f.removeFnAttr(Attribute::StackProtect);
-        f.removeFnAttr(Attribute::StackProtectReq);
+        fp->removeFnAttr(Attribute::StackProtect);
+        fp->removeFnAttr(Attribute::StackProtectReq);
         
         // Remove linkonce_odr linkage
-        if(f.getLinkage() == GlobalValue::LinkOnceODRLinkage) {
-            f.setLinkage(GlobalValue::ExternalLinkage);
+        if(fp->getLinkage() == GlobalValue::LinkOnceODRLinkage) {
+            fp->setLinkage(GlobalValue::ExternalLinkage);
         }
         
         // Replace some floating point operations with calls to un-randomized functions
         //if(isDataPCRelative(m)) {
             // Always do this--required on PowerPC
-            extractFloatOperations(f);
+            extractFloatOperations(*fp);
         //}
         
         // Collect all the referenced global values in this function
-        map<Constant*, set<Use*> > references = findPCRelativeUsesIn(f);
+        map<Constant*, set<Use*> > references = findPCRelativeUsesIn(*fp);
         
         if(references.size() > 0) {
             // Build an ordered list of referenced constants
@@ -465,7 +468,7 @@ struct StabilizerPass : public ModulePass {
             // Create the struct type for the relocation table
             StructType* relocationTableType = StructType::create(
                 referencedTypes, 
-                (f.getName()+".relocation_table_t").str(), 
+                (fp->getName()+".relocation_table_t").str(), 
                 false
             );
             
@@ -476,7 +479,7 @@ struct StabilizerPass : public ModulePass {
                 false,  // No, the table needs to be mutable
                 GlobalVariable::InternalLinkage, 
                 ConstantStruct::get(relocationTableType, referencedValues),
-                f.getName()+".relocation_table"
+                fp->getName()+".relocation_table"
             );
             
             // The referenced relocation table may not be the global one (for PC-relative data)
@@ -512,7 +515,9 @@ struct StabilizerPass : public ModulePass {
                     indices.push_back(Constant::getIntegerValue(Type::getInt32Ty(m.getContext()), APInt(32, 0, false)));
                     indices.push_back(Constant::getIntegerValue(Type::getInt32Ty(m.getContext()), APInt(32, (uint64_t)index, false)));
                     
-                    Constant* slot = ConstantExpr::getGetElementPtr(
+                    Constant* slot = ConstantExpr::getGetElementPtr( 
+                        relocationTableType,
+                        //nullptr,
                         actualRelocationTable,
                         indices,
                         true    // Yes, it is in bounds
@@ -533,7 +538,7 @@ struct StabilizerPass : public ModulePass {
             vector<Value*> args;
         
             // The function base
-            args.push_back(ConstantExpr::getPointerCast(&f, Type::getInt8PtrTy(m.getContext())));
+            args.push_back(ConstantExpr::getPointerCast(fp, Type::getInt8PtrTy(m.getContext())));
 
             // The function limit
             args.push_back(ConstantExpr::getPointerCast(next, Type::getInt8PtrTy(m.getContext())));
@@ -553,7 +558,7 @@ struct StabilizerPass : public ModulePass {
             vector<Value*> args;
             
             // The function base
-            args.push_back(ConstantExpr::getPointerCast(&f, Type::getInt8PtrTy(m.getContext())));
+            args.push_back(ConstantExpr::getPointerCast(fp, Type::getInt8PtrTy(m.getContext())));
             
             // The function limit
             args.push_back(ConstantExpr::getPointerCast(next, Type::getInt8PtrTy(m.getContext())));

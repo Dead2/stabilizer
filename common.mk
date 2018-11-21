@@ -74,34 +74,34 @@ build:: $(TARGETS) $(INCLUDE_DIRS)
 obj/%.o:: %.c Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CC)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
-	@$(CC) $(CFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
 
 obj/%.o:: %.cpp Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
-	@$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
 	
 obj/%.o:: %.cc Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
-	@$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
 	
 obj/%.o:: %.C Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
-	@$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
 
 $(SHARED_LIB_TARGETS):: $(OBJS) $(INCLUDE_DIRS) $(INCLUDES) Makefile $(ROOT)/common.mk
 	@echo $(INDENT)[$(notdir $(firstword $(CXXLIB)))] Linking $@ for $(if $(DEBUG),Debug,Release) build
-	@$(CXXLIB) $(CXXFLAGS) $(INCFLAGS) $(OBJS) -o $@ $(LIBFLAGS)
+	$(CXXLIB) $(CXXFLAGS) $(INCFLAGS) $(OBJS) -o $@ $(LIBFLAGS)
 
 $(STATIC_LIB_TARGETS):: $(OBJS) $(INCLUDE_DIRS) $(INCLUDES) Makefile $(ROOT)/common.mk
 	@echo $(INDENT)[ar] Linking $@ for $(if $(DEBUG),Debug,Release) build
-	@ar rcs $@ $(OBJS)
+	ar rcs $@ $(OBJS)
 
 $(OTHER_TARGETS):: $(OBJS) $(INCLUDE_DIRS) $(INCLUDES) Makefile $(ROOT)/common.mk
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Linking $@ for $(if $(DEBUG),Debug,Release) build
-	@$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) $(OBJS) -o $@ $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) $(OBJS) -o $@ $(LIBFLAGS)
 
 $(RECURSIVE_TARGETS)::
 	@for dir in $(DIRS); do \
@@ -112,9 +112,9 @@ $(RECURSIVE_TARGETS)::
 $(ROOT)/Heap-Layers:
 	@ echo $(INDENT)[git] Checking out Heap-Layers
 	@rm -rf $(ROOT)/Heap-Layers
-	@git clone https://github.com/emeryberger/Heap-Layers.git $(ROOT)/Heap-Layers
+	git clone https://github.com/emeryberger/Heap-Layers.git $(ROOT)/Heap-Layers
 
 $(ROOT)/DieHard/src/include $(ROOT)/DieHard/src/include/math $(ROOT)/DieHard/src/include/rng $(ROOT)/DieHard/src/include/static $(ROOT)/DieHard/src/include/util:
 	@echo $(INDENT)[git] Checking out DieHard
 	@rm -rf $(ROOT)/DieHard
-	@git clone https://github.com/emeryberger/DieHard.git $(ROOT)/DieHard
+	git clone https://github.com/emeryberger/DieHard.git $(ROOT)/DieHard
