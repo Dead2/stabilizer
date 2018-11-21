@@ -15,7 +15,7 @@ parser.add_argument('-R', action='append', choices=['code', 'heap', 'stack', 'li
 parser.add_argument('-v', action='store_true')
 parser.add_argument('-lang', choices=['c', 'c++', 'fortran'])
 parser.add_argument('-platform', choices=['auto', 'linux', 'osx'], default='auto')
-parser.add_argument('-frontend', choices=['gcc', 'clang'], default='gcc')
+parser.add_argument('-frontend', choices=['gcc', 'clang'], default='clang')
 
 # Compiler pass-through arguments
 parser.add_argument('-c', action='store_true')
@@ -38,7 +38,7 @@ def getPlatform():
 	elif util.get_platform().startswith('linux'):
 		return 'linux'
 	else:
-		print 'Unsupported platform'
+		print( 'Unsupported platform')
 		exit(2)
 
 def arg(flag, values):
@@ -117,13 +117,13 @@ def compile(input):
 	cmd += ' '+input
 	
 	if args.v:
-		print cmd
+		print( cmd)
 	os.system(cmd)
 	
 	if needsAssembly:
 		cmd = 'llvm-as -o ' + args.o + ' ' + args.o + '.s'
 		if args.v:
-			print cmd
+			print( cmd)
 		os.system(cmd)
 	
 	return args.o
@@ -137,7 +137,7 @@ def link(inputs):
 	cmd += ' '.join(inputs)
 
 	if args.v:
-		print cmd
+		print( cmd)
 	os.system(cmd)
 	return args.o + '.bc'
 
@@ -153,7 +153,7 @@ def transform(input):
 	cmd += arg('', opts)
 	
 	if args.v:
-		print cmd
+		print( cmd)
 	os.system(cmd)
 	return args.o + '.opt.bc'
 
@@ -163,7 +163,7 @@ def codegen(input):
 	cmd += ' ' + input
 	
 	if args.v:
-		print cmd
+		print( cmd)
 	os.system(cmd)
 	
 	if args.lang == 'fortran':
@@ -179,7 +179,7 @@ def codegen(input):
 	cmd += arg('l', args.l)
 	
 	if args.v:
-		print cmd
+		print( cmd)
 	os.system(cmd)
 	
 	return args.o
