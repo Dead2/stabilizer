@@ -158,7 +158,7 @@ def transform(input):
 	return args.o + '.opt.bc'
 
 def codegen(input):
-	cmd = 'llc -O0 -relocation-model=pic -disable-fp-elim'
+	cmd = 'llc -O0 -relocation-model=pic --frame-pointer=all'
 	cmd += ' -o ' + args.o + '.s'
 	cmd += ' ' + input
 	

@@ -5,7 +5,6 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/Instructions.h>
-#include <llvm/IR/TypeBuilder.h>
 #include <llvm/IR/DataLayout.h>
 
 #include <llvm/Support/raw_ostream.h>
@@ -19,7 +18,6 @@
 
 
 using namespace llvm;
-using namespace llvm::types;
 using namespace llvm::cl;
 
 using namespace std;
@@ -277,9 +275,10 @@ struct StabilizerPass : public ModulePass {
         // Constructor function type
         FunctionType* ctor_fn_t = FunctionType::get(void_t, false);
         PointerType* ctor_fn_p_t = PointerType::get(ctor_fn_t, 0);
+	PointerType* ctor_i8_p_t = Type::getInt8PtrTy(m.getContext());
 
         // Constructor table entry type
-        StructType* ctor_entry_t = StructType::get(i32_t, ctor_fn_p_t);
+        StructType* ctor_entry_t = StructType::get(i32_t, ctor_fn_p_t, ctor_i8_p_t);
 
         // Create constructor function
         Function* init = Function::Create(ctor_fn_t, Function::InternalLinkage, name, &m);
@@ -291,7 +290,7 @@ struct StabilizerPass : public ModulePass {
         ctor_entries.push_back(
             ConstantStruct::get(ctor_entry_t,
                 ConstantInt::get(i32_t, 65535, false),
-                init
+                init, Constant::getNullValue(ctor_i8_p_t)
             )
         );
         
@@ -919,10 +918,15 @@ struct StabilizerPass : public ModulePass {
         );
         
         registerFunction->addFnAttr(Attribute::NonLazyBind);
-        
+
+        Type* void_t = Type::getVoidTy(m.getContext());
+        FunctionType* ctor_fn_t = FunctionType::get(void_t, false);
+        PointerType* ctor_fn_p_t = PointerType::get(ctor_fn_t, 0);
+        FunctionType* reg_ctor_fn_t = FunctionType::get(void_t, {ctor_fn_p_t}, false);
+
         // Declare the register_constructor runtime function
         registerConstructor = Function::Create(
-            TypeBuilder<void(void()), true>::get(m.getContext()),
+	    reg_ctor_fn_t,
             Function::ExternalLinkage,
             "stabilizer_register_constructor",
             &m
