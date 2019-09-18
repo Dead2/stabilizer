@@ -1,4 +1,4 @@
-**NOTE**: Little fork that let stabilizer work with llvm6.0. I'm a newbie with LLVM, so the patch may not be perfect.
+**NOTE**: Little fork that let stabilizer work with llvm9.0. This seems to work on HelloWorld. But more complex examples crash. Need more time to figure out why.
 
 ## Stabilizer: Statistically Rigorous Performance Evaluation
 [Charlie Curtsinger](http://www.cs.umass.edu/~charlie) and [Emery D. Berger](http://www.cs.umass.edu/~emery)
