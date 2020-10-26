@@ -1,9 +1,9 @@
 #ifndef RUNTIME_UTIL_H
 #define RUNTIME_UTIL_H
 
-#include <llvm/Support/RandomNumberGenerator.h>
 #include <stdint.h>
 #include <sys/mman.h>
+#include <randomnumbergenerator.h>
 
 #include "Arch.h"
 

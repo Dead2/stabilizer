@@ -1,8 +1,9 @@
 #if !defined(RUNTIME_HEAP_H)
 #define RUNTIME_HEAP_H
 
-#include "DieHard/src/include/shuffleheap.h"
-#include "Heap-Layers/heaplayers.h"
+#include <heaplayers>
+#include <shuffleheap.h>
+
 #include "MMapSource.h"
 #include "Util.h"
 

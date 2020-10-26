@@ -9,11 +9,11 @@
 #include <set>
 #include <vector>
 
-#include "Context.h"
-#include "Debug.h"
 #include "Function.h"
 #include "FunctionLocation.h"
+#include "Debug.h"
 #include "Heap.h"
+#include "Context.h"
 
 using namespace std;
 
