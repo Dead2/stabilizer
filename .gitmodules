@@ -1,6 +1,6 @@
-[submodule "runtime/Heap-Layers"]
-	path = runtime/Heap-Layers
+[submodule "Heap-Layers"]
+	path = Heap-Layers
 	url = https://github.com/emeryberger/Heap-Layers
-[submodule "runtime/DieHard"]
-	path = runtime/DieHard
+[submodule "DieHard"]
+	path = DieHard
 	url = https://github.com/emeryberger/DieHard
