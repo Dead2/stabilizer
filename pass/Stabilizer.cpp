@@ -410,7 +410,7 @@ struct StabilizerPass : public ModulePass {
         );
         
         // Align the following function to a cache line to avoid mixing code/data in cache
-        next->setAlignment(ALIGN);
+        next->setAlignment(MaybeAlign(ALIGN));
         
         // Put a basic block and return instruction into the dummy function
         BasicBlock *dummy_block = BasicBlock::Create(m.getContext(), "", next);

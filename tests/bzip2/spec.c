@@ -73,7 +73,7 @@ double ran()
 	} else {
 		seedi = test + _M_MODULUS;
 	}
-	return ( (float) seedi / _M_MODULUS);
+	return ( (float) seedi / (float) _M_MODULUS);
 }
 
 
