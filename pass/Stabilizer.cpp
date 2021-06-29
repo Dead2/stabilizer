@@ -366,7 +366,7 @@ struct StabilizerPass : public ModulePass {
             Instruction* next = c->getNextNode();
 
 			// Load the stack pad size and widen it to an intptr
-			Value* pad = new LoadInst(stackPad, "pad", c);
+			Value* pad = new LoadInst(stackPad->getType()->getPointerElementType(), stackPad, "pad", c);
             Value* wide_pad = ZExtInst::CreateZExtOrBitCast(pad, getIntptrType(m), "", c);
 
             // Multiply the pad by the required stack alignment
@@ -520,6 +520,7 @@ struct StabilizerPass : public ModulePass {
                     );
                     
                     Value* loaded = new LoadInst(
+                        slot->getType()->getPointerElementType(),
                         slot, 
                         c->getName()+".indirect", 
                         insertion_point
@@ -704,7 +705,7 @@ struct StabilizerPass : public ModulePass {
                                     insertion_point = incoming->getTerminator();
                                 }
 
-                                LoadInst* load = new LoadInst(g, "fconst.load", insertion_point);
+                                LoadInst* load = new LoadInst(g->getType()->getPointerElementType(), g, "fconst.load", insertion_point);
 
                                 op_iter->set(load);
                             }
