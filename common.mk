@@ -46,7 +46,7 @@ all: debug
 # Just remove the targets
 clean::
 ifneq ($(TARGETS),)
-	@rm -f $(TARGETS)
+	@rm -f $(TARGETS) $(addsuffix .bc, $(TARGETS)) $(addsuffix .opt.bc, $(TARGETS)) $(addsuffix .s, $(TARGETS))
 endif
 
 # Set the default source and include files with wildcards
