@@ -173,7 +173,9 @@ def codegen(input):
 		cmd = 'gfortran'
 	else:
 		cmd = args.frontend
-	
+
+        if cmd == "clang" and 'COMPILER_PATH' in os.environ:
+                cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 	cmd += ' ' + args.o + '.s'
 	
 	cmd += arg('o ', args.o)
