@@ -41,7 +41,8 @@ Stabilizer's compiler driver `szc` is written in Python. It uses the
 ### Building Stabilizer
 
 ```
-$ git clone git://github.com/ccurtsinger/stabilizer.git stabilizer
+$ git clone https://github.com/timadye/stabilizer.git
+$ git submodule update --init --recursive
 $ make
 ```
 
