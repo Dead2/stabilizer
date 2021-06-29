@@ -162,7 +162,7 @@ quantum_objcode_stop()
 /* Store an operation with its arguments in the object code data */
 
 int
-quantum_objcode_put(unsigned char operation, ...)
+quantum_objcode_put(unsigned operation, ...)
 {
   int i, size;
   va_list args;

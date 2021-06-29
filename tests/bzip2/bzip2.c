@@ -484,7 +484,7 @@ void compressStream ( FILE *stream, FILE *zStream )
       outputHandleJustInCase = SPEC_NULLCAST NULL;
       if (ret == EOF) goto errhandler_io;
    }
-   outputHandleJustInCase = NULL;
+   outputHandleJustInCase = SPEC_NULLCAST NULL;
    if (ferror(stream)) goto errhandler_io;
    ret = fclose ( stream );
    if (ret == EOF) goto errhandler_io;
@@ -611,7 +611,7 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
       outputHandleJustInCase = SPEC_NULLCAST NULL;
       if (ret == EOF) goto errhandler_io;
    }
-   outputHandleJustInCase = NULL;
+   outputHandleJustInCase = SPEC_NULLCAST NULL;
    if (verbosity >= 2) fprintf ( stderr, "\n    " );
    return True;
 

@@ -58,7 +58,7 @@ extern int quantum_char2int(unsigned char *buf);
 extern double quantum_char2double(unsigned char *buf);
 extern void quantum_objcode_start();
 extern void quantum_objcode_stop();
-extern int quantum_objcode_put(unsigned char operation, ...);
+extern int quantum_objcode_put(unsigned operation, ...);
 extern int quantum_objcode_write(char *file);
 extern void quantum_objcode_file(char *file);
 extern void quantum_objcode_exit(char *file);

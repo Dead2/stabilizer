@@ -5,7 +5,7 @@ build:: hello
 
 include $(ROOT)/common.mk
 
-CC = $(ROOT)/szc $(SZCFLAGS) -Rcode -Rheap -Rstack
+CC = $(ROOT)/szc $(SZCFLAGS)
 CXX = $(CC)
 CXXFLAGS =
 

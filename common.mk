@@ -5,10 +5,15 @@ PLATFORM ?= $(OS).$(CPU)
 TARGET_PLATFORM ?= $(PLATFORM)
 
 # Set the default compilers and flags
+ifneq ($(COMPILER_PATH),)
+CC = clang --gcc-toolchain=$(COMPILER_PATH)
+CXX = clang++ --gcc-toolchain=$(COMPILER_PATH)
+else
 CC = clang
 CXX = clang++
-CFLAGS ?= -Os
-CXXFLAGS ?= $(CFLAGS)
+endif
+CFLAGS = -Os
+CXXFLAGS = $(CFLAGS)
 
 # Include platform-specific rules
 ifneq ($(CROSS_TARGET),)
@@ -17,6 +22,8 @@ else
 	include $(ROOT)/platforms/$(PLATFORM).mk
 endif
 
+SZCFLAGS += -v -Rheap -Rstack
+
 # Set the default shared library filename suffix
 SHLIB_SUFFIX ?= so
 
@@ -24,10 +31,10 @@ SHLIB_SUFFIX ?= so
 DIRS ?=
 
 # Don't require any libraries by default
-LIBS ?= 
+LIBS ?=
 
 # Set the default include directories
-INCLUDE_DIRS ?= 
+INCLUDE_DIRS ?=
 
 # Recurse into subdirectories for the 'clean' and 'build' targets
 RECURSIVE_TARGETS ?= clean build
@@ -80,12 +87,12 @@ obj/%.o:: %.cpp Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
 	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
-	
+
 obj/%.o:: %.cc Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build
 	$(CXX) $(CXXFLAGS) $(if $(DEBUG),-g,-DNDEBUG) $(INCFLAGS) -c $< -o $@
-	
+
 obj/%.o:: %.C Makefile $(ROOT)/common.mk $(INCLUDE_DIRS) $(INCLUDES)
 	@mkdir -p obj
 	@echo $(INDENT)[$(notdir $(firstword $(CXX)))] Compiling $< for $(if $(DEBUG),Debug,Release) build

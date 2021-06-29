@@ -1,4 +1,4 @@
-**NOTE**: Little fork of a little fork that let stabilizer work with llvm9.0 to let stabilizer work with llvm11.0. This seems to work on HelloWorld. But more complex examples crash. Need more time to figure out why.
+**NOTE**: Little fork of a little fork that lets stabilizer sort-of work with llvm9.0 on Linux x86_64. This runs all the tests, without the -Rcode option.
 
 ## Stabilizer: Statistically Rigorous Performance Evaluation
 
@@ -30,8 +30,8 @@ Stabilizer requires LLVM 3.1. Follow the directions
 front-end. Stabilizer's build system assumes LLVM include files will be
 accessible through your default include path.
 
-By default, Stabilizer will use GCC and the
-[Dragonegg](http://dragonegg.llvm.org/) plugin to produce LLVM IR. Fortran
+By default, Stabilizer will use the Clang front end.
+For GCC, use the [Dragonegg](http://dragonegg.llvm.org/) plugin to produce LLVM IR. Fortran
 programs can only be built with the GCC front end. Stabilizer is tested
 against GCC version 4.6.2.
 

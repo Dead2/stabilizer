@@ -105,7 +105,10 @@ def compile(input):
 		needsAssembly = True
 	
 	else:
-		cmd = 'clang -O0 -c -emit-llvm'
+		cmd = 'clang'
+                if 'COMPILER_PATH' in os.environ:
+                        cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
+                cmd += ' -O0 -c -emit-llvm'
 		cmd += arg('o ', args.o)
 	
 	cmd += arg('O', 0)

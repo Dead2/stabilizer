@@ -361,7 +361,7 @@ quantum_gate1(int target, quantum_matrix m, quantum_reg *reg)
   done = calloc(reg->size + addsize, sizeof(char));
   if(!done)
     {
-      printf("Not enough memory for %i bytes array!\n", 
+      printf("Not enough memory for %zu bytes array!\n", 
 	     (reg->size + addsize) * sizeof(char));
       exit(1);
     }
@@ -539,7 +539,7 @@ quantum_gate2(int control, int target, quantum_matrix m, quantum_reg *reg)
   done = calloc(reg->size + addsize, sizeof(char));
   if(!done)
     {
-      printf("Not enough memory for %i bytes array!\n", 
+      printf("Not enough memory for %zu bytes array!\n", 
 	     (reg->size + addsize) * sizeof(char));
       exit(1);
     }
