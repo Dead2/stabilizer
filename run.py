@@ -18,7 +18,7 @@ for arg in sys.argv[1:]:
 		to_run.append(arg)
 	elif arg.startswith('-') and arg[1:] in benchmarks:
 		dont_run.append(arg[1:])
-	elif arg in configs:
+	elif arg in configs or any([a in configs for a in arg.split(".")]):
 		run_configs.append(arg)
 	elif arg in ['O0', 'O1', 'O2', 'O3']:
 		tune = arg
@@ -37,6 +37,9 @@ for bmk in dont_run:
 	if bmk in to_run:
 		to_run.remove(bmk)
 
+os.environ["PATH"]            = os.path.abspath (os.path.dirname(sys.argv[0])) + ":" + os.environ["PATH"]
+os.environ["LD_LIBRARY_PATH"] = os.path.abspath (os.path.dirname(sys.argv[0])) + ":" + os.environ["LD_LIBRARY_PATH"]
+
 def runspec(bench, size, tune, ext, n, rebuild=False):
 	if tune == 'O0' or tune == 'O1':
 		real_config = 'szclo'
@@ -52,7 +55,7 @@ def runspec(bench, size, tune, ext, n, rebuild=False):
 	if rebuild:
 		cmd += ' --rebuild'
 	cmd += ' '+bench
-
+	print (cmd)
 	os.system(cmd)
 
 for bmk in to_run:
