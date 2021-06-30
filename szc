@@ -32,6 +32,7 @@ parser.add_argument('-l', action='append', default=[])
 parser.add_argument('-m')
 parser.add_argument('-std', action='append', default=[])
 parser.add_argument('-pthread', action='store_true')
+parser.add_argument('-rdynamic', action='store_true')
 parser.add_argument('input', nargs='+')
 
 # Do the parse
@@ -114,7 +115,10 @@ def compile(input):
 		needsAssembly = True
 	
 	else:
-		cmd = 'clang'
+		if args.lang == 'c++':
+			cmd = 'clang++'
+		else:
+			cmd = 'clang'
 		if 'COMPILER_PATH' in os.environ:
 			cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 		cmd += arg('O', args.fopt)
@@ -187,8 +191,11 @@ def codegen(input):
 	else:
 		cmd = args.frontend
 
-	if cmd == "clang" and 'COMPILER_PATH' in os.environ:
-		cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
+	if cmd == "clang":
+		if args.lang == 'c++':
+			cmd = 'clang++'
+		if 'COMPILER_PATH' in os.environ:
+			cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 	cmd += ' ' + args.o + '.s'
 	
 	cmd += arg('O', args.O)
@@ -198,6 +205,7 @@ def codegen(input):
 	cmd += arg('l', args.l)
 	cmd += arg('m', args.m)
 	cmd += arg('pthread', args.pthread)
+	cmd += arg('rdynamic', args.rdynamic)
 	
 	if args.v:
 		print( cmd)
