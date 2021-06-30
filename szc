@@ -54,7 +54,7 @@ def arg(flag, values):
 	for v in values:
 		if v == True:
 			cmd += ' -'+flag
-		elif v == False:
+		elif v is None or v == False:
 			pass
 		elif re.match(r"\w\w", flag):
 			cmd += ' -'+flag+"="+v

@@ -23,6 +23,7 @@ else
 endif
 
 #SZCFLAGS += -v -Rcode -Rheap -Rstack -Rlink
+#SZCFLAGS += -v -Rcode -Rheap -Rlink
 SZCFLAGS += -v -Rheap -Rstack -Rlink
 
 # Set the default shared library filename suffix
