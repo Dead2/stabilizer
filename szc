@@ -4,6 +4,7 @@ import os
 import sys
 import random
 import argparse
+import re
 from distutils import util
 
 parser = argparse.ArgumentParser(description="Stabilizer Compiler Driver")
@@ -16,17 +17,21 @@ parser.add_argument('-v', action='store_true')
 parser.add_argument('-lang', choices=['c', 'c++', 'fortran'])
 parser.add_argument('-platform', choices=['auto', 'linux', 'osx'], default='auto')
 parser.add_argument('-frontend', choices=['gcc', 'clang'], default='clang')
+parser.add_argument('-fopt', default='0')
 
 # Compiler pass-through arguments
 parser.add_argument('-c', action='store_true')
 parser.add_argument('-o')
-parser.add_argument('-O', type=int, default=2)
+parser.add_argument('-O', default='2')
 parser.add_argument('-g', action='store_true')
 parser.add_argument('-f', action='append', default=[])
 parser.add_argument('-D', action='append', default=[])
 parser.add_argument('-L', action='append', default=[])
 parser.add_argument('-I', action='append', default=[])
 parser.add_argument('-l', action='append', default=[])
+parser.add_argument('-m')
+parser.add_argument('-std', action='append', default=[])
+parser.add_argument('-pthread', action='store_true')
 parser.add_argument('input', nargs='+')
 
 # Do the parse
@@ -51,6 +56,8 @@ def arg(flag, values):
 			cmd += ' -'+flag
 		elif v == False:
 			pass
+		elif re.match(r"\w\w", flag):
+			cmd += ' -'+flag+"="+v
 		else:
 			cmd += ' -'+flag+v
 	return cmd
@@ -95,12 +102,14 @@ def compile(input):
 	needsAssembly = False
 	
 	if args.lang == 'fortran':
-		cmd = 'gfortran -O0 -fplugin=dragonegg -S -fplugin-arg-dragonegg-emit-ir'
+		cmd = 'gfortran -fplugin=dragonegg -S -fplugin-arg-dragonegg-emit-ir'
+		cmd += arg('O', args.fopt)
 		cmd += arg('o ', args.o+'.s')
 		needsAssembly = True
 		
 	elif args.frontend == 'gcc':
 		cmd = 'gcc -O0 -fplugin=dragonegg -S -fplugin-arg-dragonegg-emit-ir'
+		cmd += arg('O', args.fopt)
 		cmd += arg('o ', args.o+'.s')
 		needsAssembly = True
 	
@@ -108,14 +117,17 @@ def compile(input):
 		cmd = 'clang'
 		if 'COMPILER_PATH' in os.environ:
 			cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
-		cmd += ' -O0 -c -emit-llvm'
+		cmd += arg('O', args.fopt)
+		cmd += ' -c -emit-llvm'
 		cmd += arg('o ', args.o)
 	
-	cmd += arg('O', 0)
 	cmd += arg('g', args.g)
 	cmd += arg('I', args.I)
 	cmd += arg('f', args.f)
 	cmd += arg('D', args.D)
+	cmd += arg('std', args.std)
+	cmd += arg('m', args.m)
+	cmd += arg('pthread', args.pthread)
 	
 	cmd += ' '+input
 	
@@ -148,8 +160,8 @@ def transform(input):
 	cmd = 'opt -o ' + args.o + '.opt.bc'
 	cmd += ' ' + input
 	
-	if args.O > 0:
-		cmd += ' -O'+str(args.O)
+	if args.O != '0':
+		cmd += ' -O'+args.O
 	
 	cmd += ' -load='+STABILIZER_HOME+'/LLVMStabilizer.'+LIBSUFFIX
 	
@@ -161,7 +173,8 @@ def transform(input):
 	return args.o + '.opt.bc'
 
 def codegen(input):
-	cmd = 'llc -O0 -relocation-model=pic --frame-pointer=all'
+	cmd = 'llc -relocation-model=pic --frame-pointer=all'
+	cmd += arg('O', args.fopt)
 	cmd += ' -o ' + args.o + '.s'
 	cmd += ' ' + input
 	
@@ -178,10 +191,13 @@ def codegen(input):
 		cmd += ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 	cmd += ' ' + args.o + '.s'
 	
+	cmd += arg('O', args.O)
 	cmd += arg('o ', args.o)
 	cmd += arg('f', args.f)
 	cmd += arg('L', args.L)
 	cmd += arg('l', args.l)
+	cmd += arg('m', args.m)
+	cmd += arg('pthread', args.pthread)
 	
 	if args.v:
 		print( cmd)

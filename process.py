@@ -97,7 +97,7 @@ def group(results, *keys):
 		del new_r[key]
 		
 		if len(new_r) == 1:
-			new_r = new_r.values()[0]
+			new_r = list(new_r.values())[0]
 		
 		grouped[r[key]].append(new_r)
 	
@@ -162,7 +162,7 @@ if args.r:
 							exts.append('"'+ext+'"')
 							times.append(str(time))
 
-	print 'dat <- data.frame(benchmark=c(' + ', '.join(benchmarks) + '), tune=c(' + ', '.join(tunes) + '), ext=c(' + ', '.join(exts) + '), time=c(' + ', '.join(times) + '))'
+	print ('dat <- data.frame(benchmark=c(' + ', '.join(benchmarks) + '), tune=c(' + ', '.join(tunes) + '), ext=c(' + ', '.join(exts) + '), time=c(' + ', '.join(times) + '))')
 
 		
 elif args.all:
@@ -178,7 +178,7 @@ elif args.all:
 						if tune in results[benchmark] and ext in results[benchmark][tune]:
 							row = [benchmark+'_'+ext+'_'+tune]
 							row += results[benchmark][tune][ext]
-							print ', '.join(map(str, row))
+							print (', '.join(map(str, row)))
 	
 else:
 	benchmarks.sort()
@@ -199,10 +199,10 @@ else:
 						headings.append(ext+'_'+tune)
 						columns.append(ext+'_'+tune)
 	
-	print ', '.join(map(pad, headings))
+	print (', '.join(map(pad, headings)))
 	
 	for benchmark in benchmarks:
-		print pad(benchmark)+',',
+		print (pad(benchmark)+',',end='')
 	
 		values = []
 		for ext in exts:
@@ -230,4 +230,4 @@ else:
 							else:
 								values.append(mean(results[benchmark][tune][ext]))
 	
-		print ', '.join(map(pad, map(str, values)))
+		print (', '.join(map(pad, map(str, values))))

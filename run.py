@@ -50,8 +50,8 @@ def runspec(bench, size, tune, ext, n, rebuild=False):
 		real_tune = 'base'
 	elif tune == 'O1' or tune == 'O3':
 		real_tune = 'peak'
-	
-	cmd = 'runspec --config='+real_config+' --mach=linux --action=run --tune='+real_tune+' --size='+size+' --ext='+ext+' -n '+str(n)
+	if ext != '': ext = ' --ext='+ext
+	cmd = 'runspec --config='+real_config+' --mach=linux --action=run --tune='+real_tune+' --size='+size+ext+' -n '+str(n)
 	if rebuild:
 		cmd += ' --rebuild'
 	cmd += ' '+bench
