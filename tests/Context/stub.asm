@@ -32,11 +32,11 @@ _saveState:
     push rcx
     push rbx
     push rax
-    
+
     mov rdi, 8[rbp]
     lea rsi, (_stub.end - _stub)[rdi]
     call _doStuff
-    
+
     pop rax
     pop rbx
     pop rcx

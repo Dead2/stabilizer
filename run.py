@@ -45,7 +45,7 @@ def runspec(bench, size, tune, ext, n, rebuild=False):
 		real_config = 'szclo'
 	elif tune == 'O2' or tune == 'O3':
 		real_config = 'szchi'
-	
+
 	if tune == 'O0' or tune == 'O2':
 		real_tune = 'base'
 	elif tune == 'O1' or tune == 'O3':

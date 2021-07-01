@@ -23,14 +23,14 @@ struct Stack {
 private:
     /// A pointer to the current stack frame
     void** _frame;
-    
+
 public:
     /**
      * Initialize a stack with a frame address
      * \arg frame The starting frame pointer
      */
     inline Stack(void* frame) : _frame((void**)frame) {}
-    
+
     /**
      * Get the return address from the current frame
      * \returns A reference to the return address
@@ -38,7 +38,7 @@ public:
     inline void*& ret() {
         return _frame[1];
     }
-    
+
     /**
      * Get the next frame pointer up the stack
      * \returns A reference to the next frame pointer
@@ -46,7 +46,7 @@ public:
     inline void*& fp() {
         return _frame[0];
     }
-    
+
     /**
      * Move up to the next frame
      */
@@ -59,7 +59,7 @@ struct Context {
 private:
     /// The actual signal context
     ucontext_t* _c;
-    
+
 public:
     Context(void* c) : _c((ucontext_t*)c) {}
 
@@ -67,10 +67,10 @@ public:
         _OSX(_AnyX86(return *(void**)&_c->uc_mcontext->__ss.__rip));
         _LINUX(_AnyX86(return *(void**)&_c->uc_mcontext.gregs[REG_RIP]));
         _LINUX(_PPC(return *(void**)&_c->uc_mcontext.regs->nip));
-        
+
         ABORT("Instruction pointer not available on current target");
     }
-    
+
     /**
      * Get a reference to the context stack pointer
      * \returns A reference to the stack pointer
@@ -79,10 +79,10 @@ public:
         _OSX(_AnyX86(return *(void**)&_c->uc_mcontext->__ss.__rsp));
         _LINUX(_AnyX86(return *(void**)&_c->uc_mcontext.gregs[REG_RSP]));
         _LINUX(_PPC(return *(void**)&_c->uc_mcontext.regs->gpr[PT_R1]));
-        
+
         ABORT("Stack pointer not available on current target");
     }
-    
+
     /**
      * Get a reference to the context frame pointer
      * \returns A reference to the frame pointer
@@ -91,10 +91,10 @@ public:
         _OSX(_AnyX86(return *(void**)&_c->uc_mcontext->__ss.__rbp));
         _LINUX(_AnyX86(return *(void**)&_c->uc_mcontext.gregs[REG_RBP]));
         _LINUX(_PPC(return *(void**)&_c->uc_mcontext.regs->gpr[PT_R1]));
-        
+
         ABORT("Frame pointer not available on current target");
     }
-    
+
     /**
      * Get an iterator to walk the context's stack
      * \returns A Stack iterator

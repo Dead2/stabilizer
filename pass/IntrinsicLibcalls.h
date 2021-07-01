@@ -30,7 +30,7 @@ void InitLibcalls() {
     inlined.insert("llvm.expect.i16");
     inlined.insert("llvm.expect.i32");
     inlined.insert("llvm.expect.i64");
-    
+
     inlined.insert("llvm.uadd.with.overflow.i32");
 
     inlined.insert("llvm.objectsize.i8");
@@ -45,10 +45,10 @@ void InitLibcalls() {
     inlined.insert("llvm.stacksave");
     inlined.insert("llvm.stackrestore");
     inlined.insert("llvm.trap");
-    
+
     inlined.insert("llvm.uadd.with.overflow.i64");
     inlined.insert("llvm.umul.with.overflow.i64");
-    
+
     inlined.insert("llvm.eh.exception");
     inlined.insert("llvm.eh.selector");
 
@@ -59,7 +59,7 @@ void InitLibcalls() {
     libcall_map["llvm.memcpy.p0i8.p0i8.i16"] = "memcpy";
     libcall_map["llvm.memcpy.p0i8.p0i8.i32"] = "memcpy";
     libcall_map["llvm.memcpy.p0i8.p0i8.i64"] = "memcpy";
-    
+
     libcall_map["llvm.memcpy.i8"] =  "memcpy";
     libcall_map["llvm.memcpy.i16"] = "memcpy";
     libcall_map["llvm.memcpy.i32"] = "memcpy";
@@ -69,7 +69,7 @@ void InitLibcalls() {
     libcall_map["llvm.memmove.p0i8.p0i8.i16"] = "memmove";
     libcall_map["llvm.memmove.p0i8.p0i8.i32"] = "memmove";
     libcall_map["llvm.memmove.p0i8.p0i8.i64"] = "memmove";
-    
+
     libcall_map["llvm.memmove.i8"] =  "memmove";
     libcall_map["llvm.memmove.i16"] = "memmove";
     libcall_map["llvm.memmove.i32"] = "memmove";
@@ -79,7 +79,7 @@ void InitLibcalls() {
     libcall_map["llvm.memset.p0i8.i16"] = "memset_i16";
     libcall_map["llvm.memset.p0i8.i32"] = "memset_i32";
     libcall_map["llvm.memset.p0i8.i64"] = "memset_i64";
-    
+
     libcall_map["llvm.memset.i8"] =  "memset_i8";
     libcall_map["llvm.memset.i16"] = "memset_i16";
     libcall_map["llvm.memset.i32"] = "memset_i32";

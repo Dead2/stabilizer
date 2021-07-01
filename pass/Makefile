@@ -1,7 +1,7 @@
 ROOT = ..
 
 TARGETS = $(ROOT)/LLVMStabilizer.$(SHLIB_SUFFIX)
-LIBS = 
+LIBS =
 
 include $(ROOT)/common.mk
 

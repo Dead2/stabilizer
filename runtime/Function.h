@@ -19,20 +19,20 @@ private:
         uint8_t _jmp[sizeof(Jump)];
         uint8_t _trap[sizeof(Trap)];
     };
-    
+
     Function* _f;
-    
+
 public:
     FunctionHeader(Function* f) : _f(f) {}
-    
+
     void jumpTo(void* target) {
         new(_jmp) Jump(target);
     }
-    
+
     void trap() {
         new(_trap) Trap();
     }
-    
+
     Function* getFunction() {
         return _f;
     }
@@ -41,18 +41,18 @@ public:
 struct Function {
 private:
     friend class FunctionLocation;
-    
+
     MemRange _code;
     MemRange _table;
     FunctionHeader* _header;
     FunctionHeader _savedHeader;
-    
+
     bool _tableAdjacent;    //< If true, the relocation table should be placed next to the function
-    
+
     uint8_t* _stackPad;		//< The address of the stack pad value for this function
-    
+
     FunctionLocation* _current;
-    
+
     /**
      * \brief Place a jump instruction to forward calls to this function
      * \arg target The destination of the jump instruction
@@ -61,9 +61,9 @@ private:
         _header->jumpTo(target);
         flush_icache(_header, sizeof(FunctionHeader));
     }
-    
+
     void copyTo(void* target);
-    
+
 public:
     /**
      * \brief Allocate Function objects on the randomized heap
@@ -72,7 +72,7 @@ public:
     void* operator new(size_t sz) {
         return getDataHeap()->malloc(sz);
     }
-    
+
     /**
      * \brief Free allocated memory to the randomized heap
      * \arg p The object base pointer
@@ -80,7 +80,7 @@ public:
     void operator delete(void* p) {
         getDataHeap()->free(p);
     }
-    
+
     /**
     * \brief Create a new runtime representation of a function
     * \arg codeBase The address of the function
@@ -92,7 +92,7 @@ public:
     */
     inline Function(void* codeBase, void* codeLimit, void* tableBase, size_t tableSize, bool tableAdjacent, uint8_t* stackPad) :
         _code(codeBase, codeLimit), _table(tableBase, tableSize), _savedHeader(*(FunctionHeader*)_code.base()) {
-        
+
         this->_tableAdjacent = tableAdjacent;
         this->_stackPad = stackPad;
         this->_current = NULL;
@@ -102,34 +102,34 @@ public:
             perror("Unable make code writable");
             abort();
         }
-        
+
         // Make a copy of the function header
         _savedHeader = *(FunctionHeader*)_code.base();
         _header = new(_code.base()) FunctionHeader(this);
     }
-    
+
     /**
      * \brief Free all code locations when deleted
      */
     ~Function();
-    
+
     FunctionLocation* relocate();
-    
+
     /**
      * \brief Place a trap instruction at the beginning of this function
      */
     inline void setTrap() {
         _header->trap();
     }
-    
+
     inline void* getCodeBase() {
         return _code.base();
     }
-    
+
     inline size_t getCodeSize() {
         return _code.size();
     }
-    
+
     inline size_t getAllocationSize() {
         if(_tableAdjacent) {
             return _code.size() + _table.size();
@@ -137,7 +137,7 @@ public:
             return _code.size();
         }
     }
-    
+
     inline FunctionLocation* getCurrentLocation() {
         return _current;
     }

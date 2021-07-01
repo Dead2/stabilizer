@@ -8,7 +8,7 @@ Function::~Function() {
     if(_current != NULL) {
         _current->release();
     }
-    
+
     if(_stackPad != NULL) {
         getDataHeap()->free(_stackPad);
     }
@@ -17,7 +17,7 @@ Function::~Function() {
 /**
  * Copy the code and relocation table for this function.  Use the pre-assembled
  * code/table chunk if the function has already been relocated.
- * 
+ *
  * \arg target The destination of the copy.
  */
 void Function::copyTo(void* target) {
@@ -64,6 +64,6 @@ FunctionLocation* Function::relocate() {
         // Update random stack pad
         *_stackPad = getRandomByte();
     }
-    
+
     return oldLocation;
 }

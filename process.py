@@ -32,25 +32,25 @@ results = []
 
 for filename in args.files:
 	f = open(filename, 'r')
-	
+
 	bits = {}
-	
+
 	for line in f:
 		if line.startswith('spec.cpu2006.results'):
 			(s, c, r, bmk, tune, n, key_value) = line.split('.', 6)
 			(key, value) = key_value.split(':', 1)
 
 			(ignore, bmk) = bmk.split('_')
-		
+
 			if bmk not in bits:
 				bits[bmk] = {}
-			
+
 			if n not in bits[bmk]:
 				bits[bmk][n] = {}
-			
+
 			bits[bmk][n]['tune'] = tune
 			bits[bmk][n][key.strip()] = value.strip()
-	
+
 	for bmk in bits:
 		for n in bits[bmk]:
 			results.append(bits[bmk][n])
@@ -86,21 +86,21 @@ def get(results, *keys):
 def group(results, *keys):
 	if len(keys) == 0:
 		return results
-	
+
 	key = keys[0]
 	grouped = {}
 	for r in results:
 		if r[key] not in grouped:
 			grouped[r[key]] = []
-		
+
 		new_r = dict(r)
 		del new_r[key]
-		
+
 		if len(new_r) == 1:
 			new_r = list(new_r.values())[0]
-		
+
 		grouped[r[key]].append(new_r)
-	
+
 	for g in grouped:
 		grouped[g] = group(grouped[g], *keys[1:])
 	return grouped
@@ -164,12 +164,12 @@ if args.r:
 
 	print ('dat <- data.frame(benchmark=c(' + ', '.join(benchmarks) + '), tune=c(' + ', '.join(tunes) + '), ext=c(' + ', '.join(exts) + '), time=c(' + ', '.join(times) + '))')
 
-		
+
 elif args.all:
 	benchmarks.sort()
 	tunes.sort()
 	exts.sort()
-	
+
 	for tune in tunes:
 		if tune in args.tune:
 			for benchmark in benchmarks:
@@ -179,31 +179,31 @@ elif args.all:
 							row = [benchmark+'_'+ext+'_'+tune]
 							row += results[benchmark][tune][ext]
 							print (', '.join(map(str, row)))
-	
+
 else:
 	benchmarks.sort()
 	tunes.sort()
 	exts.sort()
-	
+
 	headings = ['Benchmark']
 	columns = []
 	for ext in exts:
 		if ext in args.ext:
 			for tune in tunes:
-				if tune in args.tune:	
+				if tune in args.tune:
 					found = False
 					for benchmark in benchmarks:
 						found |= tune in results[benchmark] and ext in results[benchmark][tune]
-						
+
 					if found:
 						headings.append(ext+'_'+tune)
 						columns.append(ext+'_'+tune)
-	
+
 	print (', '.join(map(pad, headings)))
-	
+
 	for benchmark in benchmarks:
 		print (pad(benchmark)+',',end='')
-	
+
 		values = []
 		for ext in exts:
 			if ext in args.ext:
@@ -229,5 +229,5 @@ else:
 								values.append(len(results[benchmark][tune][ext]))
 							else:
 								values.append(mean(results[benchmark][tune][ext]))
-	
+
 		print (', '.join(map(pad, map(str, values))))
