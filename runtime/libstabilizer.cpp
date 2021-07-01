@@ -86,6 +86,10 @@ int main(int argc, char** argv) {
 
   // Call the old main function
   int r = stabilizer_main(argc, argv);
+
+  // Don't leave the timer for our parent to deal with
+  setTimer(0);
+
   DEBUG("Shutting down");
 
   return r;
