@@ -187,6 +187,9 @@ struct StabilizerPass : public ModulePass {
             // Transform each function and register it with the stabilizer runtime
             for(Module::iterator f_iter = m.begin(); f_iter != m.end(); f_iter++) {    
                 Function* f = &(*f_iter);
+                if (local_functions.find(f) == local_functions.end()) {
+                    continue;
+                }
                 vector<Value*> args = randomizeCode(m, f_iter);
                 //we skip the added dummy
                 f_iter++; 
@@ -427,6 +430,7 @@ struct StabilizerPass : public ModulePass {
         // Remove stack protection (creates implicit global references)
         fp->removeFnAttr(Attribute::StackProtect);
         fp->removeFnAttr(Attribute::StackProtectReq);
+        fp->removeFnAttr(Attribute::StackProtectStrong);
         
         // Remove linkonce_odr linkage
         if(fp->getLinkage() == GlobalValue::LinkOnceODRLinkage) {
