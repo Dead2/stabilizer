@@ -1,4 +1,4 @@
-**NOTE**: Little fork of a little fork that lets stabilizer sort-of work with LLVM 10.0 on Linux x86_64. This runs all the tests, without the -Rcode option.
+**NOTE**: This is an LLVM 12 port of stabilizer that passes all tests on Linux x86_64.
 
 ## Stabilizer: Statistically Rigorous Performance Evaluation
 
