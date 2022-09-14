@@ -5,13 +5,13 @@ build:: bzip2
 
 include $(ROOT)/common.mk
 
-CC = $(ROOT)/szc $(SZCFLAGS)
+CC = $(ROOT)/szcc $(SZCFLAGS)
 CXX = $(CC)
 #CFLAGS = -DSPEC_CPU -DSPEC_CPU_MACOSX
 CFLAGS = -DSPEC_CPU -DSPEC_CPU_LINUX_X64
 CXXFLAGS =
 
-$(OBJS):: $(ROOT)/szc $(ROOT)/LLVMStabilizer.$(SHLIB_SUFFIX)
+$(OBJS):: $(CC) $(ROOT)/LLVMStabilizer.$(SHLIB_SUFFIX)
 
 test:: bzip2
 	@echo $(INDENT)[test] Running 'bzip2'

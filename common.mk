@@ -22,7 +22,10 @@ else
 	include $(ROOT)/platforms/$(PLATFORM).mk
 endif
 
-SZCFLAGS += -v -Rcode -Rheap -Rstack
+#SZCFLAGS += -v -Rcode -Rheap -Rstack
+SZ_CODE=1
+SZ_HEAP=1
+SZ_STACK=1
 
 # Set the default shared library filename suffix
 SHLIB_SUFFIX ?= so

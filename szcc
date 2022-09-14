@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+import os
+import sys
+import shlex
+import shutil
+import random
+import argparse
+import subprocess
+from types import SimpleNamespace
+from distutils import util
+
+# Utility functions
+def verboseprint(*args, **kwargs):
+    """ Print input to stderr if verbose is True. """
+    if verbose:
+        print(*args, file=sys.stderr, **kwargs)
+
+def arg(flag, values):
+    """ Build string of compiler parmeters from list of values. """
+    if not isinstance(values, list):
+        values = [values]
+
+    cmd = ''
+    for val in values:
+        if val == True:
+            cmd += f" -{flag}"
+        elif val is None or val == False:
+            pass
+        else:
+            cmd += f" -{flag}{val}"
+    return cmd
+
+def findexec(filename,path,failonmissing=False):
+    """ Find filename in path, returns None if not found. """
+    tmp = shutil.which(filename,path=path)
+    if tmp and os.path.split(tmp)[0] == os.path.dirname(__file__):
+        tmp = None
+    if not tmp and failonmissing:
+        sys.exit("Could not find program {filename}, check that it is installed and available in env PATH.")
+    return tmp
+
+def runcommand(command, env=os.environ, stoponfail=False, silent=False):
+    """ Run program, optionally silenced, optionally stop on non-zero retcode """
+    if env == '':
+        env = dict()
+    verboseprint(f"Executing: {command}")
+    args = shlex.split(command)
+    if silent:
+        devnull = open('/dev/null', 'w')
+        retval = subprocess.Popen(args,stdout=devnull,stderr=sys.stderr,env=env).wait()
+        devnull.close()
+    else:
+        retval = subprocess.Popen(args,stdout=sys.stdout,stderr=sys.stderr,env=env).wait()
+
+    if retval != 0 and stoponfail:
+        print(f"Failed {command}, retcode {retval}")
+        sys.exit(retval)
+    return retval
+
+def getplatform():
+    """ Detect selected or current platform, exit if unsupported. """
+    platform = None
+    if 'SZ_PLATFORM' in os.environ:
+        if os.environ['SZ_PLATFORM'] == 'linux':
+            platform = 'linux'
+        elif os.environ['SZ_PLATFORM'] == 'osx':
+            platform = 'osx'
+
+    if not platform:
+        if util.get_platform().startswith('linux'):
+            platform = 'linux'
+        elif util.get_platform().startswith('macosx'):
+            platform = 'osx'
+
+    if platform not in ['linux','osx']:
+        print( 'Unsupported platform')
+        exit(2)
+
+    return platform
+
+# Main stabilizer functions
+def compile(input):
+    """ Compile source files. """
+    if os.path.splitext(input)[1] in ['.o','.a','.lo','.la','.so']:
+        return input
+
+    verboseprint("Entering Compile")
+
+    cmd = f"{compiler} -c -emit-llvm {gcctoolchain} -o {outfile} {optlevel} {extraparams} {input}"
+
+    runcommand(cmd,stoponfail=True)
+    return outfile
+
+def link(inputs):
+    """ Link object files, optionally shuffle object file order. """
+    verboseprint("Entering Link")
+
+    tmpfile = f"{outfile}.bc"
+    cmd = f"{exe.llvmlink} -o {tmpfile} "
+
+    if 'SZ_LINK' in os.environ and os.environ['SZ_LINK'] == '1':
+        random.shuffle(inputs)
+    cmd += ' '.join(inputs)
+
+    runcommand(cmd,stoponfail=True)
+    return tmpfile
+
+def transform(input):
+    """ Transform objects. """
+    verboseprint("Entering Transform")
+
+    tmpfile = f"{outfile}.opt.bc"
+    cmd = f"{exe.opt} -o {tmpfile} {input} {optlevel} -load={stabilizerlib} {randomizers}"
+
+    runcommand(cmd,stoponfail=True)
+    return tmpfile
+
+def codegen(input):
+    """ Run codegen """
+    verboseprint("Entering Codegen")
+
+    tmpfile = f"{outfile}.s"
+    cmd = f"{exe.llc} -relocation-model=pic --frame-pointer=all {optlevel} -o {tmpfile} {input}"
+
+    runcommand(cmd,stoponfail=True)
+    return tmpfile
+
+def linkend(input):
+    """ Link the finaly binary. """
+    verboseprint("Entering LinkEnd")
+
+    cmd = f"{compiler} {gcctoolchain} {input} -o {outfile} {optlevel} {extraparams} {linkparams} {sofiles}"
+
+    runcommand(cmd,stoponfail=True)
+    return outfile
+
+def init():
+    """ Initialize variables and parse arguments """
+    global verbose,compiler,stabilize,STABILIZER_HOME,exe,outfile,unknown,opts,optlevel,args
+    global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles,add_output
+    verbose = False
+    if 'SZ_VERBOSE' in os.environ and os.environ['SZ_VERBOSE'] == '1':
+        verbose = True
+
+    opts = []
+    compiler = None
+    stabilize = False
+
+    STABILIZER_HOME = os.path.dirname(__file__)
+    envpath = os.environ['PATH']
+
+    exe = SimpleNamespace()
+    exe.clang = findexec('clang',envpath)
+    exe.clangxx = findexec('clang++',envpath)
+    exe.llvmlink = findexec('llvm-link',envpath,failonmissing=True)
+    exe.llvmas = findexec('llvm-as',envpath,failonmissing=True)
+    exe.opt = findexec('opt',envpath,failonmissing=True)
+    exe.llc = findexec('llc',envpath,failonmissing=True)
+
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="SZCC - Stabilizer Compiler Wrapper")
+
+    # Compiler arguments
+    parser.add_argument('-c', '--compile', action='store_true')
+    parser.add_argument('-o', '--output', default=None)
+    parser.add_argument('-MT', default=None)
+    parser.add_argument('-MF', default=None)
+    parser.add_argument('-O', default=None)
+    parser.add_argument('-L', action='append', default=[])
+    parser.add_argument('-l', action='append', default=[])
+    parser.add_argument('-isystem', action='append', default=[])
+    parser.add_argument('input', nargs='*', default=[])
+
+    args,unknownarr = parser.parse_known_args()
+
+    verboseprint(sys.argv)
+    verboseprint(args)
+    verboseprint(unknownarr)
+
+    # Select compiler
+    if sys.argv[0][-7:] == 'clang++' or sys.argv[0][-6:] == 'szcc++':
+        verboseprint('SZCC Running in C++ mode')
+        compiler = exe.clangxx
+    else:
+        verboseprint('SZCC Running in C mode')
+        compiler = exe.clang
+
+    # Add unrecognized parameters that are also files to input file list
+    for ifile in unknownarr:
+        if os.path.isfile(ifile):
+            verboseprint(f"Unrecognized parameter seems to be a file, adding as input file: {ifile}")
+            args.input.append(ifile)
+
+    unknown = ' '.join(unknownarr)
+
+    # Print found and missing input files
+    if verbose:
+        for ifile in args.input:
+            if os.path.isfile(ifile):
+                verboseprint(f"Input file exists: {ifile}, current cwd: {os.getcwd()}")
+            else:
+                verboseprint(f"Input file missing: {ifile}, current cwd: {os.getcwd()}")
+
+    # Filter out .so files for linking to
+    sofilesarr = []
+    for ifile in args.input:
+        if ifile and len(ifile) >= 1 and ifile[0] and os.path.splitext(ifile)[1] == '.so':
+            sofilesarr.append(ifile)
+    for sfile in sofilesarr:
+        args.input.remove(sfile)
+    sofiles = ' '.join(sofilesarr)
+
+    # Handle missing output filename
+    add_output = None
+    if args.output == None:
+        if len(args.input) >= 1 and args.input[0] and os.path.splitext(args.input[0])[1] in ['.c','.cxx','.cpp']:
+            verboseprint("No output, attempting to create output name")
+            outfile = f"{args.input[0][:-2]}.o"
+        else:
+            print("No input or output file names")
+            sys.exit(1)
+    else:
+        outfile = args.output
+
+    # Detect platform
+    if getplatform() == 'osx':
+        LIBSUFFIX = 'dylib'
+    else:
+        LIBSUFFIX = 'so'
+
+    # Enable selected randomizations
+    if 'SZ_CODE' in os.environ and os.environ['SZ_CODE'] == '1':
+        verboseprint("Enabling randomized code location")
+        stabilize = True
+        opts.append('lower-intrinsics')
+        opts.append('lowerswitch')
+        opts.append('lowerinvoke')
+        opts.append('stabilize-code')
+
+    if 'SZ_STACK' in os.environ and os.environ['SZ_STACK'] == '1':
+        verboseprint("Enabling randomized stack location")
+        stabilize = True
+        opts.append('stabilize-stack')
+
+    if 'SZ_HEAP' in os.environ and os.environ['SZ_HEAP'] == '1':
+        verboseprint("Enabling randomized heap location")
+        stabilize = True
+        opts.append('stabilize-heap')
+
+    if 'SZ_LINK' in os.environ and os.environ['SZ_LINK'] == '1':
+        verboseprint("Enabling randomized link order")
+
+    if stabilize:
+        args.L.append(STABILIZER_HOME)
+        args.l.append('stabilizer')
+        opts.append('stabilize')
+    else:
+        verboseprint("Warning: No Stabilizer options enabled.")
+
+    # Prepare compiler arguments
+    if args.O:
+        optlevel = ' -O'+args.O
+    else:
+        optlevel = ''
+
+    gcctoolchain = ''
+    if 'COMPILER_PATH' in os.environ:
+        gcctoolchain = ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
+
+    stabilizerlib = f"{STABILIZER_HOME}/LLVMStabilizer.{LIBSUFFIX}"
+
+    randomizers = arg('', opts)
+
+    extraparams = arg('isystem', args.isystem)
+    extraparams += arg('MT', args.MT)
+    extraparams += arg('MF', args.MF)
+    extraparams += ' '+unknown
+
+    args.l.append('stdc++')
+    linkparams = arg('L', args.L)
+    linkparams += arg('l', args.l)
+
+def main():
+    """ Run the compilation and linking stages """
+
+    # Shortcut for running compiler directly if not in compile mode and no input files
+    if not args.compile and not args.input:
+        cmd = f"{compiler} {' '.join(sys.argv[1:])}"
+        sys.exit(runcommand(cmd))
+
+    # Compile source files
+    object_files_tmp = list(map(compile, args.input))
+    object_files_tmp.append(add_output)
+
+    if not args.compile:
+        # Filter out any missing object files
+        object_files = []
+        for ofile in object_files_tmp:
+            if ofile and os.path.isfile(ofile):
+                object_files.append(ofile)
+            else:
+                verboseprint(f"Object file missing, ignoring: {ofile}, current cwd: {os.getcwd()}")
+
+        verboseprint(object_files)
+        linked = link(object_files)
+        transformed = transform(linked)
+        coded = codegen(transformed)
+        linkend(coded)
+
+
+if __name__ == '__main__':
+    init()
+    main()

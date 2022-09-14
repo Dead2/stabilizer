@@ -1,126 +1,136 @@
-**NOTE**: This is an LLVM 12 port of stabilizer that passes all tests on Linux x86_64.
+## Stabilizer
+*Statistically Rigorous Performance Evaluation
 
-## Stabilizer: Statistically Rigorous Performance Evaluation
+This repo is maintained by Hans Kristian Rosbach
+                       aka Dead2 (stabilizer àt circlestorm dót org)
 
-[Charlie Curtsinger](http://www.cs.umass.edu/~charlie) and [Emery D. Berger](http://www.cs.umass.edu/~emery)
+About this fork
+---------------
 
-Copyright (C) 2013 University of Massachusetts Amherst
+This is a fork of the long-unmaintained Stabilizer by Charlie Curtsinger and Emery D. Berger,
+consider visiting the [original repo](https://github.com/ccurtsinger/stabilizer).
 
-### About
+This version supports LLVM version 12, although there seem to be some crashes with
+SZ_STACK or SZ_CODE enabled. SZ_HEAP and SZ_LINK seem to work fine however.
+
+Changes in this fork compared to the original:
+ - Partial LLVM 12 compatibility inherited from other 3rd party forks of Stabilizer.
+ - Completely rewritten compiler wrapper, much better compatibility with actual clang
+   behavior, and much less likely to require major buildsystem changes.
+ - Dropped support for GCC/Gfortran since DragonEgg has not been ported to newer LLVM.
+ - Removed scripts and configs for running SPEC CPU2006.
+
+Help is wanted for testing and fixing the remaining crashes.
+Despite the crashes, this is still useful for enabling heap randomizations.
+
+Currently LLVM version 12 is supported and tested, but it likely also supports
+several older versions (maybe without crashes too) and possibly newer versions.
+Please provide test feedback, so I can update this text.
+
+I am not an LLVM expert, but it seemed that one of the biggest problems this project
+had was that it absolutely required a huge amount of changes to most buildsystems and
+would not pass even the most basic compiler tests in CMake or GNU Autoconf.
+This likely limited the audience that was able to test and use Stabilizer, resulting
+in few people interested in fixing bugs.
+
+About Stabilizer
+----------------
 
 Stabilizer is a compiler transformation and runtime library for dynamic memory
 layout randomization. Programs built with Stabilizer run with randomly-placed
-functions, stack frames, and heap objects. Functions and stack frames are moved
+functions, stack frames, and/or heap objects. Functions and stack frames are moved
 repeatedly during execution. A random memory layout eliminates the effect of
 layout on performance, and repeated randomization leads to normally-distributed
 execution times. This makes it straightforward to use standard statistical tests
 for performance evaluation.
 
 A more detailed description of Stabilizer is available in the
-[Paper](http://www.cs.umass.edu/~charlie/stabilizer.pdf), which will appear at
-ASPLOS 2013 in March.
+[Paper](http://www.cs.umass.edu/~charlie/stabilizer.pdf).
 
-### Requirements
+Stabilizer Requirements
+-----------------------
 
-Stabilizer requires [LLVM 3.1](http://llvm.org/releases/download.html#3.1).
+Stabilizer requires LLVM version 12, see above comment about other versions.
 Stabilizer runs on OSX and Linux, and supports x86, x86_64, and PowerPC.
 
-Stabilizer requires LLVM 3.1. Follow the directions
-[here](http://clang.llvm.org/get_started.html) to build LLVM 3.1 and the Clang
-front-end. Stabilizer's build system assumes LLVM include files will be
-accessible through your default include path.
+The build system assumes LLVM include files will be accessible through
+your default include path.
 
-By default, Stabilizer will use the Clang front end.
-For GCC, use the [Dragonegg](http://dragonegg.llvm.org/) plugin to produce LLVM IR. Fortran
-programs can only be built with the GCC front end. Stabilizer is tested
-against GCC version 4.6.2.
+`szcc`, the compiler wrapper, is written in Python and requires Python3
 
-Stabilizer's compiler driver `szc` is written in Python. It uses the
-`argparse` module, so a relatively modern version of Python (>=2.7) is required.
-
-### Building Stabilizer
+Building Stabilizer
+-------------------
 
 ```
-$ git clone https://github.com/timadye/stabilizer.git
+$ git clone https://github.com/Dead2/stabilizer.git
 $ git submodule update --init --recursive
 $ make
 ```
 
-By default, Stabilizer is build with debug output enabled. Run
+By default, Stabilizer is built with debug output enabled. Run
 `make clean release` to build the release version with asserts and debug output
 disabled.
 
-### Using Stabilizer
+Using Stabilizer
+----------------
 
-Stabilizer includes the `szc` compiler driver, which builds programs using the
-Stabilizer compiler transformations. `szc` passes on common GCC flags, and is
-compatible with C, C++ and Fortran inputs.
+Stabilizer includes the `szcc` and `szcc++` compiler wrapper, which builds programs
+using the Stabilizer compiler transformations. `szcc` passes on common clang flags,
+and is compatible with C and C++ inputs.
 
-To compile a program in `foo.c` with Stabilizer, run:
-
+To manually compile a program in `foo.c` with Stabilizer, run:
 ```
-$ szc -Rcode -Rstack -Rheap foo.c -o foo
+export SZ_CODE=1 SZ_HEAP=1 SZ_STACK=1 SZ_LINK=1
+$ szcc foo.c -o foo
 ```
+The exported env flags enable the various randomizations, and may be used in any
+combination.
 
-The `-R` flags enable randomizations, and may be used in any combination.
-Stabilizer uses GCC with the Dragonegg plugin as its default front-end. To
-use clang, pass `-frontend=clang` to `szc`.
+* `SZ_CODE` Move functions repeatedly during execution.
+* `SZ_HEAP` Randomize stack location.
+* `SZ_STACK` Move stack repeatedly during execution.
+* `SZ_LINK` Randomly reorder linking (only once, during compilation)
+* `SZ_VERBOSE` Turns on verbose debugging output from `szcc` during compile.
 
-The resulting executable is linked against with `libstabilizer.so` (or `.dylib`
-on OSX). Place this library somewhere in your system's dynamic library search
-path or (preferably) add the Stabilizer base directory to your `LD_LIBRARY_PATH`
-or `DYLD_LIBRARY_PATH` environment variable.
 
-### SPEC CPU2006
+Letting szcc impersonate Clang
+------------------------------
 
-The `szchi.cfg` and `szclo.cfg` config files can be installed in a SPEC CPU2006
-config directory to build and run benchmarks with Stabilizer. The szchi config
-`-O2` for base and `-O3` for peak tuning, and szclo uses `-O0` and `-O1`.
+`szcc` can also be run by using `clang` and `clang++` symlinks if the stabilizer
+dir is added to PATH. You can also specify compilers manually.
 
-The `run.py` and `process.py` scripts were used to drive experiments and
-collect results. The run script accepts optimization levels, benchmarks to
-enable (or disable with a "-" prefix), a number of runs, and build
-configurations in any order. For example:
-
+Path:
 ```
-$ ./run.py 10 bzip2 code code.stack code.heap.stack
+export PATH=/path/to/stabilizer/:$PATH
+./configure
 ```
 
-This will run the `bzip2` benchmark 10 times in each of three randomization
-configurations. The `runspec` tool must be in your path, so `cd` to your SPEC
-installation and `sourceh shrc` first.
-
+Manually with CMake:
 ```
-$ ./run.py 10 -astar code link O2 O3
+cmake . -DCMAKE_C_COMPILER=/path/to/stabilizer/clang -DCMAKE_CXX_COMPILER=/path/to/stabilizer/clang++
 ```
 
-This will run every benchmark except `astar` 10 times with link randomization
-at `-O2` and `-O3` optimization levels.
-
-Be warned: there is no easy way to distinguish `O2` and `O0` results after the
-fact: both are marked as "base" tuning. Keep these results in separate
-directories.
-
-The process script reads `.rsf` files from SPEC and provides some summary
-statistics, or collects results in an easy-to-process format.
-
+Manually with GNU Autoconf:
 ```
-$ ./process.py $SPEC/result/*.rsf
+CC=/path/to/stabilizer/clang CXX=/path/to/stabilizer/clang++ ./configure
 ```
 
-This will print average runtimes for each benchmark in each configuration and
-tuning level for the runs in your SPEC results directory.
+The resulting executable is linked against `libstabilizer.so` (or `.dylib` on OSX).
+Place this library somewhere in your system's dynamic library search path or
+add the Stabilizer base directory to your `LD_LIBRARY_PATH` or `DYLD_LIBRARY_PATH`
+environment variable to allow running the compiled programs.
 
-Pass the `-trim` flag to remove the highest and lowest runtimes before computing
-the average.
+Credits
+-------
 
-The `-norm` flag tests the results for normality using the Shapiro-Wilk test.
+Original code by
+[Charlie Curtsinger](http://www.cs.umass.edu/~charlie) and [Emery D. Berger](http://www.cs.umass.edu/~emery)
 
-The `-all` flag dumps all results to console, suitable for pasting into a
-spreadsheet or CSV file.
+Copyright (C) 2013 University of Massachusetts Amherst
 
-### License
+License
+-------
 
-Stabilizer is distributed under the GNU GPLv2 license. Contact
-<charlie@cs.umass.edu> if you are interested in licensing Stabilizer for
-commercial use.
+Stabilizer is distributed under the GNU GPLv2 license.
+Contact <charlie@cs.umass.edu> if you are interested in
+licensing Stabilizer for commercial use.

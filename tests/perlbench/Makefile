@@ -7,13 +7,13 @@ build:: perlbench
 
 include $(ROOT)/common.mk
 
-CC = $(ROOT)/szc $(SZCFLAGS) -Rcode -Rheap -Rstack
+CC = $(ROOT)/szcc $(SZCFLAGS) -Rcode -Rheap -Rstack
 CXX = $(CC)
 CFLAGS = -DSPEC_CPU -DNEED_VA_COPY -DPERL_CORE -DSPEC_CPU_MACOSX -DSPEC_CPU_LP64
 #CFLAGS = -DSPEC_CPU -DPERL_CORE -DSPEC_CPU_LINUX_X64 -DSPEC_CPU_LP64
 CXXFLAGS =
 
-$(OBJS):: $(ROOT)/szc $(ROOT)/LLVMStabilizer.$(SHLIB_SUFFIX)
+$(OBJS):: $(CC) $(ROOT)/LLVMStabilizer.$(SHLIB_SUFFIX)
 
 test:: perlbench
 	@echo $(INDENT)[test] Running 'perlbench'
