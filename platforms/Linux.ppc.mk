@@ -2,7 +2,7 @@
 CC = gcc
 CXX = g++
 
-CFLAGS =
+CFLAGS = -Os
 CXXFLAGS = $(CFLAGS)
 
 SZCFLAGS = -frontend=clang

@@ -1,4 +1,4 @@
 include $(ROOT)/platforms/Linux.x86_64.mk
 
-CFLAGS += -m32
-CXXFLAGS += -m32
+CFLAGS += -m32 -Os
+CXXFLAGS += -m32 -Os
