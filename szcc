@@ -142,10 +142,6 @@ def init():
     if 'SZ_VERBOSE' in os.environ and os.environ['SZ_VERBOSE'] == '1':
         verbose = True
 
-    opts = []
-    compiler = None
-    stabilize = False
-
     STABILIZER_HOME = os.path.dirname(__file__)
     envpath = os.environ['PATH']
 
@@ -178,6 +174,7 @@ def init():
     verboseprint(unknownarr)
 
     # Select compiler
+    compiler = None
     if sys.argv[0][-7:] == 'clang++' or sys.argv[0][-6:] == 'szcc++':
         verboseprint('SZCC Running in C++ mode')
         compiler = exe.clangxx
@@ -229,12 +226,11 @@ def init():
         LIBSUFFIX = 'so'
 
     # Enable selected randomizations
+    opts = []
+    stabilize = False
     if 'SZ_CODE' in os.environ and os.environ['SZ_CODE'] == '1':
         verboseprint("Enabling randomized code location")
         stabilize = True
-        opts.append('lower-intrinsics')
-        opts.append('lowerswitch')
-        opts.append('lowerinvoke')
         opts.append('stabilize-code')
 
     if 'SZ_STACK' in os.environ and os.environ['SZ_STACK'] == '1':
@@ -246,6 +242,12 @@ def init():
         verboseprint("Enabling randomized heap location")
         stabilize = True
         opts.append('stabilize-heap')
+
+    if 'SZ_LOWER' in os.environ and os.environ['SZ_LOWER'] == '1':
+        verboseprint("Enabling Switch/Invoke/Intrinsic lowering")
+        opts.append('lower-intrinsics')
+        opts.append('lowerswitch')
+        opts.append('lowerinvoke')
 
     if 'SZ_LINK' in os.environ and os.environ['SZ_LINK'] == '1':
         verboseprint("Enabling randomized link order")

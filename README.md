@@ -17,8 +17,10 @@ Changes in this fork compared to the original:
  - Partial LLVM 12 compatibility inherited from other 3rd party forks of Stabilizer.
  - Completely rewritten compiler wrapper, much better compatibility with actual clang
    behavior, and much less likely to require major buildsystem changes.
+ - Enabling/disabling features is now done by env variables instead of parameters.
  - Dropped support for GCC/Gfortran since DragonEgg has not been ported to newer LLVM.
  - Removed scripts and configs for running SPEC CPU2006.
+ - Split lowering into a separate option instead of being enabled by SZ_CODE
 
 Help is wanted for testing and fixing the remaining crashes.
 Despite the crashes, this is still useful for enabling heap randomizations.
@@ -80,7 +82,7 @@ and is compatible with C and C++ inputs.
 
 To manually compile a program in `foo.c` with Stabilizer, run:
 ```
-export SZ_CODE=1 SZ_HEAP=1 SZ_STACK=1 SZ_LINK=1
+export SZ_CODE=1 SZ_HEAP=1 SZ_STACK=1 SZ_LOWER=1 SZ_LINK=1
 $ szcc foo.c -o foo
 ```
 The exported env flags enable the various randomizations, and may be used in any
@@ -89,6 +91,7 @@ combination.
 * `SZ_CODE` Move functions repeatedly during execution.
 * `SZ_HEAP` Randomize stack location.
 * `SZ_STACK` Move stack repeatedly during execution.
+* `SZ_LOWER` Switch/Invoke/Intrinsic lowering
 * `SZ_LINK` Randomly reorder linking (only once, during compilation)
 * `SZ_VERBOSE` Turns on verbose debugging output from `szcc` during compile.
 
