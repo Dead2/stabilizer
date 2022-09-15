@@ -62,7 +62,9 @@ int main(int argc, char** argv) {
   // Register signal handlers
   setHandler(Trap::TrapSignal, onTrap);
   setHandler(SIGALRM, onTimer);
-  setHandler(SIGSEGV, onFault);
+  #ifdef NDEBUG
+    setHandler(SIGSEGV, onFault);
+  #endif
   DEBUG("Signal handlers installed");
 
   // Lazily relocate functions
