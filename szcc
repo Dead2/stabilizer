@@ -36,7 +36,7 @@ def findexec(filename,path,failonmissing=False):
     if tmp and os.path.split(tmp)[0] == os.path.dirname(__file__):
         tmp = None
     if not tmp and failonmissing:
-        sys.exit("Could not find program {filename}, check that it is installed and available in env PATH.")
+        sys.exit(f"Could not find program {filename}, check that it is installed and available in env PATH.")
     return tmp
 
 def runcommand(command, env=os.environ, stoponfail=False, silent=False):
