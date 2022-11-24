@@ -591,7 +591,7 @@ struct StabilizerPass : public ModulePass {
             }
 
         } else if(isa<GlobalValue>(v)) {
-            return true;
+            return !dyn_cast<GlobalValue>(v)->isThreadLocal();
 
         } else if(isa<ConstantExpr>(v)) {
             ConstantExpr* e = dyn_cast<ConstantExpr>(v);
