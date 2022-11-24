@@ -101,6 +101,7 @@ extern "C" {
 void stabilizer_register_function(void* codeBase, void* codeLimit,
                                   void* tableBase, size_t tableSize,
                                   bool adjacent, uint8_t* stackPad) {
+  assert(codeBase < codeLimit);
   Function* f = new Function(codeBase, codeLimit, tableBase, tableSize,
                              adjacent, stackPad);
   functions.insert(f);

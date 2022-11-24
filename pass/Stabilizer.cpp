@@ -419,6 +419,9 @@ struct StabilizerPass : public ModulePass {
         BasicBlock *dummy_block = BasicBlock::Create(m.getContext(), "", next);
         ReturnInst::Create(m.getContext(), dummy_block);
 
+        // Ensure the dummy is placed in the same section
+        next->setComdat(fp->getComdat());
+
         // Ensure the dummy is placed immediately after our function
         auto old_next_f_node = std::next(f_iter);
         auto new_next_f_node = m.getFunctionList().insertAfter(f_iter, next);
