@@ -33,8 +33,6 @@ def arg(flag, values):
 def findexec(filename,path,failonmissing=False):
     """ Find filename in path, returns None if not found. """
     tmp = shutil.which(filename,path=path)
-    if tmp and os.path.split(tmp)[0] == os.path.dirname(__file__):
-        tmp = None
     if not tmp and failonmissing:
         sys.exit(f"Could not find program {filename}, check that it is installed and available in env PATH.")
     return tmp
@@ -175,7 +173,7 @@ def init():
 
     # Select compiler
     compiler = None
-    if sys.argv[0][-7:] == 'clang++' or sys.argv[0][-6:] == 'szcc++':
+    if sys.argv[0][-6:] == 'szcc++':
         verboseprint('SZCC Running in C++ mode')
         compiler = exe.clangxx
     else:
