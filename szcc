@@ -111,6 +111,7 @@ def transform(input):
 
     tmpfile = f"{outfile}.opt.bc"
     cmd = f"{exe.opt} -o {tmpfile} {input} {optlevel} -load={stabilizerlib} {randomizers}"
+    cmd += " -enable-new-pm=0"
 
     runcommand(cmd,stoponfail=True)
     return tmpfile
