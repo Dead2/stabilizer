@@ -138,7 +138,7 @@ def linkend(input):
 def init():
     """ Initialize variables and parse arguments """
     global verbose,compiler,stabilize,STABILIZER_HOME,exe,outfile,unknown,opts,optlevel,args
-    global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles,add_output
+    global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles
     verbose = False
     if 'SZ_VERBOSE' in os.environ and os.environ['SZ_VERBOSE'] == '1':
         verbose = True
@@ -209,7 +209,6 @@ def init():
     sofiles = ' '.join(sofilesarr)
 
     # Handle missing output filename
-    add_output = None
     if args.output == None:
         if len(args.input) >= 1 and args.input[0] and os.path.splitext(args.input[0])[1] in ['.c','.cxx','.cpp']:
             verboseprint("No output, attempting to create output name")
@@ -293,7 +292,6 @@ def main():
 
     # Compile source files
     object_files_tmp = list(map(compile, args.input))
-    object_files_tmp.append(add_output)
 
     if not args.compile:
         # Filter out any missing object files
