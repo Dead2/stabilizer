@@ -513,6 +513,21 @@ struct StabilizerPass : public ModulePass {
                         insertion_point = incoming->getTerminator();
                     }
 
+                    if(isa<LandingPadInst>(insertion_point)) {
+                        // Skip all usages of a symbol in `landingpad`
+                        // instructions because `landingpad` must be the first
+                        // instruction of a block. It's possible to insert
+                        // loading from the relocation table in the beginning
+                        // of the function, but `landingpad` requires a
+                        // constant argument, so it would not work anyway.
+                        //
+                        // In other words: ignore all exception handling
+                        // because we don't know how to handle it yet.
+                        // Every thrown exception will crash the program.
+                        errs() << "warning: ignoring landingpad instruction\n";
+                        continue;
+                    }
+
                     // Get the relocation table slot
                     vector<Constant*> indices;
                     indices.push_back(Constant::getIntegerValue(Type::getInt32Ty(m.getContext()), APInt(32, 0, false)));
