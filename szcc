@@ -232,6 +232,9 @@ def init():
         verboseprint("Enabling randomized code location")
         stabilize = True
         opts.append('stabilize-code')
+        opts.append('lower-intrinsics')
+        opts.append('lowerswitch')
+        opts.append('lowerinvoke')
 
     if 'SZ_STACK' in os.environ and os.environ['SZ_STACK'] == '1':
         verboseprint("Enabling randomized stack location")
@@ -242,12 +245,6 @@ def init():
         verboseprint("Enabling randomized heap location")
         stabilize = True
         opts.append('stabilize-heap')
-
-    if 'SZ_LOWER' in os.environ and os.environ['SZ_LOWER'] == '1':
-        verboseprint("Enabling Switch/Invoke/Intrinsic lowering")
-        opts.append('lower-intrinsics')
-        opts.append('lowerswitch')
-        opts.append('lowerinvoke')
 
     if 'SZ_LINK' in os.environ and os.environ['SZ_LINK'] == '1':
         verboseprint("Enabling randomized link order")

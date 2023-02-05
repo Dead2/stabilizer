@@ -25,7 +25,6 @@ endif
 SZ_CODE=1
 SZ_HEAP=1
 SZ_STACK=1
-SZ_LOWER=1
 
 # Set the default shared library filename suffix
 SHLIB_SUFFIX ?= so
