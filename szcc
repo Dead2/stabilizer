@@ -138,7 +138,7 @@ def linkend(input):
 def init():
     """ Initialize variables and parse arguments """
     global verbose,compiler,stabilize,STABILIZER_HOME,exe,outfile,unknown,opts,optlevel,args
-    global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles
+    global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles,cleantmp
     verbose = False
     if 'SZ_VERBOSE' in os.environ and os.environ['SZ_VERBOSE'] == '1':
         verbose = True
@@ -228,6 +228,7 @@ def init():
     # Enable selected randomizations
     opts = []
     stabilize = False
+    cleantmp = False
     if 'SZ_CODE' in os.environ and os.environ['SZ_CODE'] == '1':
         verboseprint("Enabling randomized code location")
         stabilize = True
@@ -251,6 +252,10 @@ def init():
 
     if 'SZ_LINK' in os.environ and os.environ['SZ_LINK'] == '1':
         verboseprint("Enabling randomized link order")
+
+    if 'SZ_CLEAN' in os.environ and os.environ['SZ_CLEAN'] == '1':
+        verboseprint("Enabling cleanup of temp files")
+        cleantmp = True
 
     if stabilize:
         args.L.append(STABILIZER_HOME)
@@ -307,6 +312,11 @@ def main():
         transformed = transform(linked)
         coded = codegen(transformed)
         linkend(coded)
+
+        if cleantmp:
+            os.remove(linked)
+            os.remove(transformed)
+            os.remove(coded)
 
 
 if __name__ == '__main__':

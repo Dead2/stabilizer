@@ -94,6 +94,7 @@ combination.
 * `SZ_LOWER` Switch/Invoke/Intrinsic lowering
 * `SZ_LINK` Randomly reorder linking (only once, during compilation)
 * `SZ_VERBOSE` Turns on verbose debugging output from `szcc` during compile.
+* `SZ_CLEAN` Turns on removal of temp files produced by `szcc` during compile.
 
 
 Letting szcc impersonate Clang
