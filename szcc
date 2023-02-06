@@ -7,7 +7,7 @@ import random
 import argparse
 import subprocess
 from types import SimpleNamespace
-from distutils import util
+from platform import system
 
 # Utility functions
 def verboseprint(*args, **kwargs):
@@ -67,9 +67,9 @@ def getplatform():
             platform = 'osx'
 
     if not platform:
-        if util.get_platform().startswith('linux'):
+        if system() == 'Linux':
             platform = 'linux'
-        elif util.get_platform().startswith('macosx'):
+        elif system() == 'Darwin':
             platform = 'osx'
 
     if platform not in ['linux','osx']:
