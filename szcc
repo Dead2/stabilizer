@@ -271,7 +271,7 @@ def init():
     if 'COMPILER_PATH' in os.environ:
         gcctoolchain = ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 
-    stabilizerlib = f"{STABILIZER_HOME}/LLVMStabilizer.{LIBSUFFIX}"
+    stabilizerlib = f"{STABILIZER_HOME}/libLLVMStabilizer.{LIBSUFFIX}"
 
     randomizers = arg('', opts)
 
