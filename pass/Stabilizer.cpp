@@ -125,6 +125,26 @@ struct StabilizerPass : public ModulePass {
     }
 
     /**
+     * \brief Choose suitable insertion point before use point.
+     */
+    static Instruction* chooseInsertionPoint(const Use* use) {
+        User* user = use->getUser();
+        Instruction* insertion_point = dyn_cast<Instruction>(user);
+
+        if (isa<PHINode>(insertion_point)) {
+            PHINode* phi = dyn_cast<PHINode>(insertion_point);
+            BasicBlock *incoming = phi->getIncomingBlock(*use);
+            return incoming->getTerminator();
+        }
+
+        if (isa<LandingPadInst>(insertion_point)) {
+            return nullptr;
+        }
+
+        return insertion_point;
+    }
+
+    /**
      * \brief Entry point for the Stabilizer compiler pass
      * \arg m The module being transformed
      * \returns whether or not the module was modified (always true)
@@ -440,6 +460,8 @@ struct StabilizerPass : public ModulePass {
             fp->setLinkage(GlobalValue::ExternalLinkage);
         }
 
+        fixTlsUsesIn(m, *fp);
+
         // Replace some floating point operations with calls to un-randomized functions
         //if(isDataPCRelative(m)) {
             // Always do this--required on PowerPC
@@ -504,22 +526,11 @@ struct StabilizerPass : public ModulePass {
 
                     Use* u = *u_iter;
 
-                    Instruction* insertion_point = dyn_cast<Instruction>(u->getUser());
-                    assert(insertion_point != NULL && "Only instruction uses can be rewritten");
-
-                    if(isa<PHINode>(insertion_point)) {
-                        PHINode* phi = dyn_cast<PHINode>(insertion_point);
-                        BasicBlock *incoming = phi->getIncomingBlock(*u);
-                        insertion_point = incoming->getTerminator();
-                    }
-
-                    if(isa<LandingPadInst>(insertion_point)) {
+                    Instruction* insertion_point = chooseInsertionPoint(u);
+                    if (!insertion_point) {
                         // Skip all usages of a symbol in `landingpad`
-                        // instructions because `landingpad` must be the first
-                        // instruction of a block. It's possible to insert
-                        // loading from the relocation table in the beginning
-                        // of the function, but `landingpad` requires a
-                        // constant argument, so it would not work anyway.
+                        // instructions because `landingpad` accepts only
+                        // constant arguments.
                         //
                         // In other words: ignore all exception handling
                         // because we don't know how to handle it yet.
@@ -609,7 +620,7 @@ struct StabilizerPass : public ModulePass {
             }
 
         } else if(isa<GlobalValue>(v)) {
-            return !dyn_cast<GlobalValue>(v)->isThreadLocal();
+            return true;
 
         } else if(isa<ConstantExpr>(v)) {
             ConstantExpr* e = dyn_cast<ConstantExpr>(v);
@@ -676,6 +687,97 @@ struct StabilizerPass : public ModulePass {
     }
 
     /**
+     * \brief Replace accesses to thread local variables with non-relocatable
+     * noinline function wrapper. It's required because llvm backend can
+     * generate PC-relative calls to access TLS.
+     */
+    void fixTlsUsesIn(Module& m, Function& func) {
+        for (BasicBlock& block : func) {
+            for (Instruction& inst : block) {
+                for (Use& use : inst.operands()) {
+                    Instruction* insertion_point = chooseInsertionPoint(&use);
+                    if (!insertion_point) {
+                        // Skip all usages of a symbol in `landingpad`
+                        // instructions because `landingpad` accepts only
+                        // constant arguments.
+                        //
+                        // In other words: ignore all exception handling
+                        // because I don't know how to handle it yet. Every
+                        // thrown exception will crash the program.
+                        errs() << "warning: ignoring landingpad instruction\n";
+                        continue;
+                    }
+
+                    if (Instruction* replacement = replaceThreadLocal(m, use.get(), insertion_point)) {
+                        use.set(replacement);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * \brief Replace thread local variables with wrapper function calls
+     * recursively. If a thread local variable is a part of a `ConstantExpr`,
+     * convert it into an `Instruction`.
+     */
+    static Instruction* replaceThreadLocal(Module& m, Value* val, Instruction* insertion_point) {
+        if (isThreadLocal(val)) {
+            Function* wrapper = getOrCreateTlsWrapper(m, val);
+            CallInst* call = CallInst::Create(wrapper, "", insertion_point);
+            return call;
+        }
+        if (ConstantExpr* expr = dyn_cast<ConstantExpr>(val)) {
+            Instruction* inst = nullptr;
+            for (unsigned i=0; i<expr->getNumOperands(); ++i) {
+                if (Value* v = replaceThreadLocal(m, expr->getOperand(i), insertion_point)) {
+                    if (!inst) {
+                        inst = expr->getAsInstruction(insertion_point);
+                    }
+                    inst->setOperand(i, v);
+                }
+            }
+            return inst;
+        }
+        return nullptr;
+    }
+
+    /**
+     * \brief Find existing or create new non-relocatable noinline function
+     * wrapper for a thread local variable.
+     */
+    static Function* getOrCreateTlsWrapper(Module& m, Value* thread_local_variable) {
+        std::string wrapper_name = "stabilizer.tls.";
+        wrapper_name += thread_local_variable->getName();
+
+        Function* wrapper = m.getFunction(wrapper_name);
+        if (!wrapper) {
+            Function* f = Function::Create(
+                FunctionType::get(thread_local_variable->getType(), false),
+                GlobalValue::PrivateLinkage,
+                wrapper_name,
+                m
+            );
+            f->addFnAttr(Attribute::NoInline);
+            f->addFnAttr(Attribute::ReadNone);
+            BasicBlock* b = BasicBlock::Create(m.getContext(), "", f);
+            ReturnInst::Create(m.getContext(), thread_local_variable, b);
+
+            wrapper = f;
+        }
+
+        return wrapper;
+    }
+
+    /**
+     * \brief Check if a value is a thread local variable.
+     */
+    static bool isThreadLocal(const Value* val) {
+        return isa<GlobalValue>(val)
+            && cast<GlobalValue>(val)->isThreadLocal();
+    }
+
+    /**
      * \brief Replace certain floating point operations with function calls.
      * Some floating point operations (definitely int-to-float and float-to-int)
      * create implicit references to floating point constants.  Replace these
@@ -719,13 +821,7 @@ struct StabilizerPass : public ModulePass {
 
                                 GlobalVariable* g = new GlobalVariable(m, t, true, GlobalVariable::InternalLinkage, c, "fconst");
 
-                                Instruction* insertion_point = &i;
-
-                                if(isa<PHINode>(insertion_point)) {
-                                    PHINode* phi = dyn_cast<PHINode>(insertion_point);
-                                    BasicBlock *incoming = phi->getIncomingBlock(*op_iter);
-                                    insertion_point = incoming->getTerminator();
-                                }
+                                Instruction* insertion_point = chooseInsertionPoint(op_iter);
 
                                 LoadInst* load = new LoadInst(g->getType()->getPointerElementType(), g, "fconst.load", insertion_point);
 
