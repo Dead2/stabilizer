@@ -732,7 +732,8 @@ struct StabilizerPass : public ModulePass {
             for (unsigned i=0; i<expr->getNumOperands(); ++i) {
                 if (Value* v = replaceThreadLocal(m, expr->getOperand(i), insertion_point)) {
                     if (!inst) {
-                        inst = expr->getAsInstruction(insertion_point);
+                        inst = expr->getAsInstruction();
+                        inst->insertBefore(insertion_point);
                     }
                     inst->setOperand(i, v);
                 }
