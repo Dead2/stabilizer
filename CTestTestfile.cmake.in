@@ -1,0 +1,2 @@
+set(ENV{LD_LIBRARY_PATH} "$<TARGET_FILE_DIR:stabilizer>")
+subdirs("${ctest_dir}")
