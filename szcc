@@ -137,13 +137,12 @@ def linkend(input):
 
 def init():
     """ Initialize variables and parse arguments """
-    global verbose,compiler,stabilize,STABILIZER_HOME,exe,outfile,unknown,opts,optlevel,args
+    global verbose,compiler,stabilize,exe,outfile,unknown,opts,optlevel,args
     global gcctoolchain,stabilizerlib,randomizers,extraparams,linkparams,sofiles,cleantmp
     verbose = False
     if 'SZ_VERBOSE' in os.environ and os.environ['SZ_VERBOSE'] == '1':
         verbose = True
 
-    STABILIZER_HOME = os.path.dirname(__file__)
     envpath = os.environ['PATH']
 
     exe = SimpleNamespace()
@@ -255,7 +254,6 @@ def init():
         cleantmp = True
 
     if stabilize:
-        args.L.append(STABILIZER_HOME)
         args.l.append('stabilizer')
         opts.append('stabilize')
     else:
@@ -271,7 +269,7 @@ def init():
     if 'COMPILER_PATH' in os.environ:
         gcctoolchain = ' --gcc-toolchain='+os.environ["COMPILER_PATH"]
 
-    stabilizerlib = f"{STABILIZER_HOME}/libLLVMStabilizer.{LIBSUFFIX}"
+    stabilizerlib = f"libLLVMStabilizer.{LIBSUFFIX}"
 
     randomizers = arg('', opts)
 
