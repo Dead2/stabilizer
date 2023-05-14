@@ -67,10 +67,17 @@ target_sources(stabilizer
 ### SZCC
 if (NOT ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/szcc ${CMAKE_CURRENT_BINARY_DIR}/szcc COPYONLY)
-  file(CREATE_LINK ${CMAKE_CURRENT_BINARY_DIR}/szcc ${CMAKE_CURRENT_BINARY_DIR}/szcc++)
 endif()
+file(CREATE_LINK ${CMAKE_CURRENT_BINARY_DIR}/szcc ${CMAKE_CURRENT_BINARY_DIR}/szcc++ SYMBOLIC)
+file(CREATE_LINK ${CMAKE_CURRENT_BINARY_DIR}/szcc ${CMAKE_CURRENT_BINARY_DIR}/clang SYMBOLIC)
+file(CREATE_LINK ${CMAKE_CURRENT_BINARY_DIR}/szcc ${CMAKE_CURRENT_BINARY_DIR}/clang++ SYMBOLIC)
 
 ### Installation
+macro(install_symlink filepath sympath)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${filepath} ${sympath})")
+    install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
+endmacro(install_symlink)
+
 install(
   TARGETS LLVMStabilizer stabilizer
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -79,7 +86,6 @@ install(
 install(
   PROGRAMS
     ${CMAKE_CURRENT_BINARY_DIR}/szcc
-    ${CMAKE_CURRENT_BINARY_DIR}/szcc++
   TYPE BIN
 )
 
@@ -87,6 +93,10 @@ install(
   FILES LICENSE
   TYPE DOC
 )
+
+install_symlink(${CMAKE_INSTALL_FULL_BINDIR}/szcc ${CMAKE_INSTALL_FULL_BINDIR}/szcc++)
+install_symlink(${CMAKE_INSTALL_FULL_BINDIR}/szcc ${CMAKE_INSTALL_FULL_DOCDIR}/clang)
+install_symlink(${CMAKE_INSTALL_FULL_BINDIR}/szcc ${CMAKE_INSTALL_FULL_DOCDIR}/clang++)
 
 ### Testing
 if (BUILD_TESTING)
