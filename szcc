@@ -30,14 +30,34 @@ def arg(flag, values):
             cmd += f" -{flag}{val}"
     return cmd
 
-def findexec(filename,path,failonmissing=False):
+def modifypath(path,remove=None,prepend=[],append=[]):
+    """ Modify PATH-style variable """
+    opath = list()
+    # Copy all elements from 'prepend'
+    opath.append(prepend)
+    # Copy elements from 'path', except ones that match 'remove'
+    tpath = path.split(':')
+    for x in tpath:
+        if not (remove and x == remove):
+            opath.append(x)
+    # Copy all elements from 'append'
+    opath.append(append)
+    return ':'.join(opath)
+
+def findfile(filename,path,failonmissing=False):
     """ Find filename in path, returns None if not found. """
-    tmp = shutil.which(filename,path=path)
-    if tmp and os.path.split(tmp)[0] == os.path.dirname(__file__):
-        tmp = None
-    if not tmp and failonmissing:
-        sys.exit(f"Could not find program {filename}, check that it is installed and available in env PATH.")
-    return tmp
+    i = 0
+    while i < 10:
+        i += 1
+        tmp = shutil.which(filename,path=path)
+        # We don't want a symlink that is linking to ourselves
+        if tmp and os.path.realpath(tmp) == __file__:
+            # Remove the path we found a symlink to self and try again
+            path = modifypath(path, remove=os.path.dirname(tmp))
+            continue
+        if not tmp and failonmissing:
+            sys.exit(f"Could not find {filename}, check that it is installed and available in env paths.")
+        return tmp
 
 def runcommand(command, env=os.environ, stoponfail=False, silent=False):
     """ Run program, optionally silenced, optionally stop on non-zero retcode """
@@ -146,12 +166,12 @@ def init():
     envpath = os.environ['PATH']
 
     exe = SimpleNamespace()
-    exe.clang = findexec('clang',envpath)
-    exe.clangxx = findexec('clang++',envpath)
-    exe.llvmlink = findexec('llvm-link',envpath,failonmissing=True)
-    exe.llvmas = findexec('llvm-as',envpath,failonmissing=True)
-    exe.opt = findexec('opt',envpath,failonmissing=True)
-    exe.llc = findexec('llc',envpath,failonmissing=True)
+    exe.clang = findfile('clang',envpath)
+    exe.clangxx = findfile('clang++',envpath)
+    exe.llvmlink = findfile('llvm-link',envpath,failonmissing=True)
+    exe.llvmas = findfile('llvm-as',envpath,failonmissing=True)
+    exe.opt = findfile('opt',envpath,failonmissing=True)
+    exe.llc = findfile('llc',envpath,failonmissing=True)
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="SZCC - Stabilizer Compiler Wrapper")
